@@ -13,6 +13,12 @@ function nav_icon($key) {
 }
 
 function page_header($title, $active = '') {
+    global $db;
+    $profil = getProfil($db);
+    $logoSrc = !empty($profil['logo']) && file_exists(BASE_DIR . '/' . $profil['logo'])
+        ? $profil['logo']
+        : (file_exists(BASE_DIR . '/assets/logo.png') ? 'assets/logo.png' : '');
+
     $nav = [
         'dashboard' => ['Dashboard', 'index.php?route=dashboard'],
         'anak'      => ['Data Anak', 'index.php?route=anak'],
@@ -38,10 +44,16 @@ function page_header($title, $active = '') {
 <div class="app">
     <aside class="sidebar">
         <div class="brand">
-            <div class="brand-badge">✿</div>
+            <?php if ($logoSrc): ?>
+                <div class="brand-badge brand-badge-img">
+                    <img src="<?= e($logoSrc) ?>" alt="Logo">
+                </div>
+            <?php else: ?>
+                <div class="brand-badge">✿</div>
+            <?php endif; ?>
             <div class="brand-info">
                 <span class="brand-title">Raport TK</span>
-                <span class="brand-tag">Sistem Penilaian PAUD</span>
+                <span class="brand-tag"><?= !empty($profil['nama_sekolah']) ? e($profil['nama_sekolah']) : 'Sistem Penilaian PAUD' ?></span>
             </div>
         </div>
         <nav>
