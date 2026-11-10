@@ -1,6 +1,11 @@
 <?php
-// Halaman cetak gabungan — tanpa layout app, khusus print
+// Halaman cetak raport (A4)
 $anakId = (int)($_GET['anak_id'] ?? 0);
+$bagian = $_GET['bagian'] ?? 'semua'; // 'semua', 'isi', 'cover_biodata'
+if (!in_array($bagian, ['semua', 'isi', 'cover_biodata'], true)) {
+    $bagian = 'semua';
+}
+
 $st = $db->prepare('SELECT * FROM anak WHERE id = ?');
 $st->execute([$anakId]);
 $anak = $st->fetch();
@@ -9,13 +14,13 @@ if (!$anak) redirect('index.php?route=cetak');
 $profil = getProfil($db);
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 
-// centang
+// centang capaian
 $checked = [];
 $st = $db->prepare('SELECT capaian_id FROM penilaian WHERE anak_id = ?');
 $st->execute([$anakId]);
 foreach ($st->fetchAll() as $r) $checked[(int)$r['capaian_id']] = true;
 
-// manual override
+// manual deskripsi override
 $manual = [];
 $st = $db->prepare('SELECT sub_cp_id, teks FROM deskripsi WHERE anak_id = ?');
 $st->execute([$anakId]);
@@ -23,89 +28,123 @@ foreach ($st->fetchAll() as $r) $manual[(int)$r['sub_cp_id']] = $r['teks'];
 
 $panggilan = $anak['nama_panggilan'] ?: $anak['nama_lengkap'];
 
-function autoText($subId, $checked, $db) {
-    $st = $db->prepare('SELECT id, teks FROM capaian WHERE sub_cp_id = ? ORDER BY urutan, id');
-    $st->execute([$subId]);
-    $picked = [];
-    foreach ($st->fetchAll() as $r) {
-        if (!empty($checked[(int)$r['id']])) $picked[] = $r['teks'];
+if (!function_exists('autoText')) {
+    function autoText($subId, $checked, $db) {
+        $st = $db->prepare('SELECT id, teks FROM capaian WHERE sub_cp_id = ? ORDER BY urutan, id');
+        $st->execute([$subId]);
+        $picked = [];
+        foreach ($st->fetchAll() as $r) {
+            if (!empty($checked[(int)$r['id']])) $picked[] = $r['teks'];
+        }
+        if (!$picked) return '';
+        $n = count($picked);
+        if ($n === 1) return $picked[0];
+        $last = array_pop($picked);
+        return implode(', ', $picked) . ', dan ' . $last;
     }
-    if (!$picked) return '';
-    $n = count($picked);
-    if ($n === 1) return $picked[0];
-    $last = array_pop($picked);
-    return implode(', ', $picked) . ', dan ' . $last;
 }
 
-function usia($tgl) {
-    if (!$tgl) return '-';
-    try {
-        $d = new DateTime($tgl);
-        $now = new DateTime();
-        $diff = $now->diff($d);
-        if ($diff->y > 0) return $diff->y . ' tahun ' . $diff->m . ' bulan';
-        return $diff->m . ' bulan';
-    } catch (Exception $e) { return '-'; }
+if (!function_exists('usia')) {
+    function usia($tgl) {
+        if (!$tgl) return '-';
+        try {
+            $d = new DateTime($tgl);
+            $now = new DateTime();
+            $diff = $now->diff($d);
+            if ($diff->y > 0) return $diff->y . ' tahun ' . $diff->m . ' bulan';
+            return $diff->m . ' bulan';
+        } catch (Exception $e) { return '-'; }
+    }
 }
 
-function listNamaAlamat($profil) {
-    $parts = [];
-    foreach (['alamat','rt_rw','desa','kecamatan','kabupaten','provinsi'] as $f) {
-        if (!empty($profil[$f])) $parts[] = $profil[$f];
+if (!function_exists('isSplitCp')) {
+    function isSplitCp($namaCp) {
+        $n = strtolower($namaCp);
+        return (strpos($n, 'jati diri') !== false) || (strpos($n, 'literasi') !== false);
     }
-    return implode(', ', $parts);
 }
+
+// Hitung jumlah halaman
+$totalIsiPages = 1; // lembar pengesahan
+foreach ($cps as $cp) {
+    $totalIsiPages += isSplitCp($cp['nama']) ? 2 : 1;
+}
+$totalAllPages = $totalIsiPages + 2; // + cover & biodata
+$currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $totalIsiPages : $totalAllPages);
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Raport - <?= e($anak['nama_lengkap']) ?></title>
+<title>Raport - <?= e($anak['nama_lengkap']) ?><?= $bagian !== 'semua' ? ' (' . ($bagian === 'isi' ? 'Isi Raport' : 'Cover & Biodata') . ')' : '' ?></title>
 <link rel="stylesheet" href="assets/print.css">
+<?php if (!empty($profil['background_rapot']) && file_exists(BASE_DIR . '/' . $profil['background_rapot'])): ?>
+<style>
+.page {
+    background-image: url('<?= e($profil['background_rapot']) ?>') !important;
+    background-size: 100% 100% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}
+.page-inner {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.page-inner::before,
+.page-inner::after {
+    display: none !important;
+}
+</style>
+<?php endif; ?>
 </head>
 <body>
 
 <div class="print-toolbar no-print">
-    <button onclick="window.print()">🖨 Cetak Semua</button>
-    <a href="index.php?route=cetak">&larr; Kembali</a>
-    <span>Raport <?= e($anak['nama_lengkap']) ?> — <?= count($cps) + 3 ?> halaman</span>
+    <button onclick="window.print()">🖨 Cetak Halaman Ini</button>
+    <a href="index.php?route=cetak_print&anak_id=<?= $anakId ?>&bagian=isi" class="btn-tab <?= $bagian === 'isi' ? 'active' : '' ?>">Isi Raport (<?= $totalIsiPages ?> Hal)</a>
+    <a href="index.php?route=cetak_print&anak_id=<?= $anakId ?>&bagian=cover_biodata" class="btn-tab <?= $bagian === 'cover_biodata' ? 'active' : '' ?>">Cover & Biodata (2 Hal)</a>
+    <a href="index.php?route=cetak_print&anak_id=<?= $anakId ?>&bagian=semua" class="btn-tab <?= $bagian === 'semua' ? 'active' : '' ?>">Cetak Semua (<?= $totalAllPages ?> Hal)</a>
+    <a href="index.php?route=cetak" class="back-link">&larr; Kembali</a>
+    <span class="info-tag"><?= e($anak['nama_lengkap']) ?> &bull; <strong><?= $currentPageCount ?> Halaman Siap Cetak</strong></span>
 </div>
 
+<?php if ($bagian === 'semua' || $bagian === 'cover_biodata'): ?>
 <!-- ============ 1. COVER / IDENTITAS SATUAN PENDIDIKAN ============ -->
 <section class="page">
     <div class="page-inner">
-        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMANGBANGAN ANAK DIDIK &nbsp; ✿</div>
+        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
 
         <h1 class="cover-title">✿ DATA SATUAN PENDIDIKAN ✿</h1>
         <h2 class="cover-sub">IDENTITAS SEKOLAH</h2>
 
         <div class="logo-wrap">
-            <?php if (!empty($profil['logo'])): ?>
-                <img src="<?= e($profil['logo']) ?>" alt="Logo">
+            <?php 
+            $coverLogo = !empty($profil['logo']) && file_exists(BASE_DIR . '/' . $profil['logo']) 
+                ? $profil['logo'] 
+                : (file_exists(BASE_DIR . '/assets/logo.png') ? 'assets/logo.png' : '');
+            ?>
+            <?php if ($coverLogo): ?>
+                <img src="<?= e($coverLogo) ?>" alt="Logo Sekolah">
             <?php else: ?>
                 <div class="logo-placeholder">LOGO</div>
             <?php endif; ?>
         </div>
 
-        <div class="band band-blue">IDENTITAS SATUAN PENDIDIKAN</div>
         <table class="identitas">
             <?php
             $rows = [
-                'Nama Sekolah / Satuan PAUD' => $profil['nama_sekolah'] ?? '',
-                'NPSN' => $profil['npsn'] ?? '',
-                'Status Sekolah' => $profil['status'] ?? '',
-                'Jenjang / Bentuk Satuan' => $profil['jenjang'] ?? '',
-                'Alamat Jalan' => $profil['alamat'] ?? '',
-                'RT / RW' => $profil['rt_rw'] ?? '',
-                'Desa / Kelurahan' => $profil['desa'] ?? '',
-                'Kecamatan' => $profil['kecamatan'] ?? '',
-                'Kabupaten / Kota' => $profil['kabupaten'] ?? '',
-                'Provinsi' => $profil['provinsi'] ?? '',
-                'Kode Pos' => $profil['kode_pos'] ?? '',
-                'Nomor Telepon' => $profil['telp'] ?? '',
-                'Email Sekolah' => $profil['email'] ?? '',
-                'Nama Kepala Sekolah' => $profil['kepala_sekolah'] ?? '',
-                'Nama Guru Kelompok' => $profil['guru_kelompok'] ?? '',
+                'Nama Satuan PAUD' => $profil['nama_sekolah'] ?: '-',
+                'NPSN' => $profil['npsn'] ?: '-',
+                'Alamat' => $profil['alamat'] ?: '-',
+                'RT / RW' => $profil['rt_rw'] ?: '-',
+                'Desa / Kelurahan' => $profil['desa'] ?: '-',
+                'Kecamatan' => $profil['kecamatan'] ?: '-',
+                'Kabupaten / Kota' => $profil['kabupaten'] ?: '-',
+                'Provinsi' => $profil['provinsi'] ?: '-',
+                'Kode Pos' => $profil['kode_pos'] ?: '-',
+                'Telepon / WhatsApp' => $profil['telp'] ?: '-',
+                'Email' => $profil['email'] ?: '-',
             ];
             foreach ($rows as $label => $val): ?>
             <tr><td class="lbl"><?= e($label) ?></td><td class="colon">:</td><td><?= e($val) ?></td></tr>
@@ -120,7 +159,7 @@ function listNamaAlamat($profil) {
 <!-- ============ 2. DATA PESERTA DIDIK ============ -->
 <section class="page">
     <div class="page-inner">
-        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMANGBANGAN ANAK DIDIK &nbsp; ✿</div>
+        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
 
         <h1 class="cover-title">✿ DATA PESERTA DIDIK ✿</h1>
         <h2 class="cover-sub">KETERANGAN DIRI ANAK</h2>
@@ -130,14 +169,14 @@ function listNamaAlamat($profil) {
             <?php
             $rows = [
                 'Nama lengkap' => $anak['nama_lengkap'],
-                'Nama panggilan' => $anak['nama_panggilan'],
-                'NISN / NIS' => $anak['nisn'],
-                'Tempat, tanggal lahir' => trim($anak['tempat_lahir'] . ', ' . $anak['tanggal_lahir'], ', '),
-                'Jenis kelamin' => $anak['jenis_kelamin'],
-                'Agama' => $anak['agama'],
-                'Anak ke-' => $anak['anak_ke'],
-                'Jumlah saudara' => $anak['jumlah_saudara'],
-                'Kelompok / rombel' => $anak['kelompok'],
+                'Nama panggilan' => $anak['nama_panggilan'] ?: '-',
+                'NISN / NIS' => $anak['nisn'] ?: '-',
+                'Tempat, tanggal lahir' => trim($anak['tempat_lahir'] . ', ' . $anak['tanggal_lahir'], ', ') ?: '-',
+                'Jenis kelamin' => $anak['jenis_kelamin'] ?: '-',
+                'Agama' => $anak['agama'] ?: '-',
+                'Anak ke-' => $anak['anak_ke'] ?: '-',
+                'Jumlah saudara' => $anak['jumlah_saudara'] ?: '-',
+                'Kelompok / rombel' => $anak['kelompok'] ?: '-',
             ];
             foreach ($rows as $label => $val): ?>
             <tr><td class="lbl"><?= e($label) ?></td><td class="colon">:</td><td><?= e($val) ?></td></tr>
@@ -148,11 +187,11 @@ function listNamaAlamat($profil) {
         <table class="identitas">
             <?php
             $rows = [
-                'Nama ayah' => $anak['nama_ayah'],
-                'Pekerjaan ayah' => $anak['pekerjaan_ayah'],
-                'Nama ibu' => $anak['nama_ibu'],
-                'Pekerjaan ibu' => $anak['pekerjaan_ibu'],
-                'Nama wali (jika ada)' => $anak['nama_wali'],
+                'Nama ayah' => $anak['nama_ayah'] ?: '-',
+                'Pekerjaan ayah' => $anak['pekerjaan_ayah'] ?: '-',
+                'Nama ibu' => $anak['nama_ibu'] ?: '-',
+                'Pekerjaan ibu' => $anak['pekerjaan_ibu'] ?: '-',
+                'Nama wali (jika ada)' => $anak['nama_wali'] ?: '-',
             ];
             foreach ($rows as $label => $val): ?>
             <tr><td class="lbl"><?= e($label) ?></td><td class="colon">:</td><td><?= e($val) ?></td></tr>
@@ -163,12 +202,12 @@ function listNamaAlamat($profil) {
         <table class="identitas">
             <?php
             $rows = [
-                'Jalan / Dusun' => $anak['alamat_jalan'],
-                'RT / RW' => $anak['alamat_rt_rw'],
-                'Desa / Kelurahan' => $anak['alamat_desa'],
-                'Kecamatan' => $anak['alamat_kecamatan'],
-                'Kabupaten / Kota' => $anak['alamat_kabupaten'],
-                'Provinsi' => $anak['alamat_provinsi'],
+                'Jalan / Dusun' => $anak['alamat_jalan'] ?: '-',
+                'RT / RW' => $anak['alamat_rt_rw'] ?: '-',
+                'Desa / Kelurahan' => $anak['alamat_desa'] ?: '-',
+                'Kecamatan' => $anak['alamat_kecamatan'] ?: '-',
+                'Kabupaten / Kota' => $anak['alamat_kabupaten'] ?: '-',
+                'Provinsi' => $anak['alamat_provinsi'] ?: '-',
             ];
             foreach ($rows as $label => $val): ?>
             <tr><td class="lbl"><?= e($label) ?></td><td class="colon">:</td><td><?= e($val) ?></td></tr>
@@ -177,16 +216,17 @@ function listNamaAlamat($profil) {
 
         <div class="sign-row">
             <div class="photo-34">
-                <?php if (!empty($anak['foto'])): ?>
+                <?php if (!empty($anak['foto']) && file_exists(BASE_DIR . '/' . $anak['foto'])): ?>
                     <img src="<?= e($anak['foto']) ?>" alt="Foto 3x4">
                 <?php else: ?>
                     <span>3x4</span>
                 <?php endif; ?>
             </div>
             <div class="sign-right">
-                <div class="sign-line">.........................., ..................</div>
-                <div class="sign-label">Kepala Satuan PAUD</div>
-                <div class="sign-name">(<?= e($profil['kepala_sekolah'] ?: '..........................') ?>)</div>
+                <div class="sign-date"><?= e($profil['kabupaten'] ?: ($profil['desa'] ?: '..........................')) ?>, ..................................</div>
+                <div class="sign-label">Kepala Satuan PAUD / TK</div>
+                <div class="sign-space"></div>
+                <div class="sign-name"><strong>( <?= e($profil['kepala_sekolah'] ?: '................................................') ?> )</strong></div>
             </div>
         </div>
 
@@ -194,88 +234,122 @@ function listNamaAlamat($profil) {
         <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
     </div>
 </section>
+<?php endif; ?>
 
-<!-- ============ 3..7. HALAMAN CP ============ -->
+<?php if ($bagian === 'semua' || $bagian === 'isi'): ?>
+<!-- ============ HALAMAN CAPAIAN PEMBELAJARAN (CP) ============ -->
 <?php foreach ($cps as $cp): ?>
-<section class="page">
-    <div class="page-inner">
-        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMANGBANGAN ANAK DIDIK &nbsp; ✿</div>
+    <?php
+    $subs = $db->prepare('SELECT * FROM sub_cp WHERE cp_id = ? ORDER BY urutan, id');
+    $subs->execute([$cp['id']]);
+    $subs = $subs->fetchAll();
 
-        <table class="meta">
-            <tr>
-                <td>Nama Anak : <?= e($anak['nama_lengkap']) ?></td>
-                <td>Kelompok : <?= e($anak['kelompok']) ?></td>
-            </tr>
-            <tr>
-                <td>Usia : <?= e(usia($anak['tanggal_lahir'])) ?></td>
-                <td>Tahun Ajaran : <?= e($profil['tahun_ajaran'] ?? '-') ?></td>
-            </tr>
-        </table>
+    // Foto dokumentasi (urutan 1 dan 2)
+    $fotos = [];
+    $st = $db->prepare('SELECT * FROM foto WHERE anak_id = ? AND cp_id = ? ORDER BY urutan');
+    $st->execute([$anakId, $cp['id']]);
+    foreach ($st->fetchAll() as $r) $fotos[(int)$r['urutan']] = $r;
 
-        <h1 class="cp-title">✿ <?= e(strtoupper($cp['nama'])) ?> ✿</h1>
+    $split = isSplitCp($cp['nama']);
+    // Jika split: pisah jadi 2 halaman (misal 3 sub-bidang di hal 1, sisanya di hal 2)
+    $pages = $split ? [
+        ['title_suffix' => ' (BAGIAN 1)', 'subs' => array_slice($subs, 0, 3), 'foto_num' => 1],
+        ['title_suffix' => ' (BAGIAN 2)', 'subs' => array_slice($subs, 3),    'foto_num' => 2],
+    ] : [
+        ['title_suffix' => '', 'subs' => $subs, 'foto_num' => 0], // 0 berarti tampilkan 2 foto
+    ];
+    ?>
 
-        <?php
-        $subs = $db->prepare('SELECT * FROM sub_cp WHERE cp_id = ? ORDER BY urutan, id');
-        $subs->execute([$cp['id']]);
-        $subs = $subs->fetchAll();
-        $color = 0;
-        foreach ($subs as $sub):
-            $color++;
-            $pink = ($color % 2 === 1);
-            $auto = autoText((int)$sub['id'], $checked, $db);
-            $text = trim($manual[(int)$sub['id']] ?? '');
-            if ($text === '' && $auto !== '') $text = 'Ananda ' . $panggilan . ' ' . $auto . '.';
-        ?>
-        <div class="block <?= $pink ? 'block-pink' : 'block-blue' ?>">
-            <div class="block-head"><?= e($sub['nama']) ?></div>
-            <div class="block-body">
-                <?php if ($text): ?>
-                    <?= e($text) ?>
-                <?php else: ?>
-                    <span class="muted-print">Belum ada capaian yang dicentang untuk sub-bidang ini.</span>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php endforeach; ?>
+    <?php foreach ($pages as $pInfo): ?>
+    <section class="page">
+        <div class="page-inner">
+            <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
 
-        <?php
-        $fotos = [];
-        $st = $db->prepare('SELECT * FROM foto WHERE anak_id = ? AND cp_id = ? ORDER BY urutan');
-        $st->execute([$anakId, $cp['id']]);
-        foreach ($st->fetchAll() as $r) $fotos[(int)$r['urutan']] = $r;
-        ?>
-        <h3 class="doc-title">✿ DOKUMENTASI KEGIATAN ANAK ✿</h3>
-        <div class="foto-row">
-            <?php for ($i = 1; $i <= 2; $i++): $f = $fotos[$i] ?? null; ?>
-            <div class="foto-cell">
-                <div class="foto-img">
-                    <?php if (!empty($f['file'])): ?>
-                        <img src="<?= e($f['file']) ?>" alt="Foto kegiatan">
+            <table class="meta">
+                <tr>
+                    <td>Nama Anak : <?= e($anak['nama_lengkap']) ?></td>
+                    <td>Kelompok : <?= e($anak['kelompok'] ?: '-') ?></td>
+                </tr>
+                <tr>
+                    <td>Usia : <?= e(usia($anak['tanggal_lahir'])) ?></td>
+                    <td>Tahun Ajaran : <?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)</td>
+                </tr>
+            </table>
+
+            <h1 class="cp-title">✿ <?= e(strtoupper($cp['nama'])) ?><?= e($pInfo['title_suffix']) ?> ✿</h1>
+
+            <?php
+            $color = 0;
+            foreach ($pInfo['subs'] as $sub):
+                $color++;
+                $pink = ($color % 2 === 1);
+                $auto = autoText((int)$sub['id'], $checked, $db);
+                $text = trim($manual[(int)$sub['id']] ?? '');
+                if ($text === '' && $auto !== '') $text = 'Ananda ' . $panggilan . ' ' . $auto . '.';
+            ?>
+            <div class="block <?= $pink ? 'block-pink' : 'block-blue' ?>">
+                <div class="block-head"><?= e($sub['nama']) ?></div>
+                <div class="block-body">
+                    <?php if ($text): ?>
+                        <?= e($text) ?>
                     <?php else: ?>
-                        <span class="muted-print">foto kegiatan</span>
+                        <span class="muted-print">Belum ada capaian yang dicentang untuk sub-bidang ini.</span>
                     <?php endif; ?>
                 </div>
-                <div class="foto-ket">Keterangan: <?= e($f['keterangan'] ?? '-') ?></div>
             </div>
-            <?php endfor; ?>
-        </div>
+            <?php endforeach; ?>
 
-        <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
-    </div>
-</section>
+            <h3 class="doc-title">✿ DOKUMENTASI KEGIATAN ANAK ✿</h3>
+            <?php if ($pInfo['foto_num'] > 0): ?>
+                <!-- Mode Split: 1 foto per lembar -->
+                <?php $f = $fotos[$pInfo['foto_num']] ?? null; ?>
+                <div class="foto-row foto-single">
+                    <div class="foto-cell foto-cell-single">
+                        <div class="foto-img">
+                            <?php if (!empty($f['file']) && file_exists(BASE_DIR . '/' . $f['file'])): ?>
+                                <img src="<?= e($f['file']) ?>" alt="Foto kegiatan">
+                            <?php else: ?>
+                                <span class="muted-print">Foto Dokumentasi Kegiatan <?= $pInfo['foto_num'] ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="foto-ket"><strong>Keterangan:</strong> <?= e($f['keterangan'] ?? '-') ?></div>
+                    </div>
+                </div>
+            <?php else: ?>
+                <!-- Mode Normal: 2 foto berdampingan -->
+                <div class="foto-row">
+                    <?php for ($i = 1; $i <= 2; $i++): $f = $fotos[$i] ?? null; ?>
+                    <div class="foto-cell">
+                        <div class="foto-img">
+                            <?php if (!empty($f['file']) && file_exists(BASE_DIR . '/' . $f['file'])): ?>
+                                <img src="<?= e($f['file']) ?>" alt="Foto kegiatan <?= $i ?>">
+                            <?php else: ?>
+                                <span class="muted-print">Foto Kegiatan <?= $i ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="foto-ket"><strong>Keterangan:</strong> <?= e($f['keterangan'] ?? '-') ?></div>
+                    </div>
+                    <?php endfor; ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
+        </div>
+    </section>
+    <?php endforeach; ?>
 <?php endforeach; ?>
 
 <!-- ============ LEMBAR PENGESAHAN ============ -->
 <section class="page">
     <div class="page-inner">
-        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMANGBANGAN ANAK DIDIK &nbsp; ✿</div>
+        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
 
         <h1 class="cover-title">✿ LEMBAR PENGESAHAN ✿</h1>
-        <h1 class="cover-title">✿ LAPORAN PERKEMANGBANGAN ANAK DIDIK ✿</h1>
+        <h2 class="cover-sub">LAPORAN PERKEMBANGAN ANAK DIDIK</h2>
 
         <table class="pengesahan-meta">
             <tr>
-                <td>Nama Anak: <?= e($anak['nama_lengkap']) ?></td>
+                <td>Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong></td>
                 <td>Kelompok: <?= e($anak['kelompok'] ?: '..............................') ?></td>
             </tr>
             <tr>
@@ -289,34 +363,38 @@ function listNamaAlamat($profil) {
             satuan pendidikan.
         </p>
 
-        <p class="pengesahan-text">Tempat, tanggal: ............................................................</p>
+        <p class="pengesahan-text">
+            Tempat, tanggal: <?= e($profil['kabupaten'] ?: ($profil['desa'] ?: '................................................')) ?>, ....................................
+        </p>
 
         <div class="ttd-row">
             <div class="ttd">
                 <div class="ttd-role">Orang Tua / Wali</div>
-                <div class="ttd-space">(................................................)</div>
+                <div class="ttd-space"></div>
+                <div class="ttd-name"><strong>( <?= e($anak['nama_ayah'] ?: ($anak['nama_wali'] ?: ($anak['nama_ibu'] ?: '................................................'))) ?> )</strong></div>
             </div>
             <div class="ttd">
-                <div class="ttd-role">Guru Kelompok</div>
-                <div class="ttd-space">(................................................)</div>
+                <div class="ttd-role">Guru Kelompok / Wali Kelas</div>
+                <div class="ttd-space"></div>
+                <div class="ttd-name"><strong>( <?= e($profil['guru_kelompok'] ?: '................................................') ?> )</strong></div>
             </div>
         </div>
 
         <div class="ttd-center">
             <div>Mengetahui,</div>
             <div>Kepala Satuan PAUD / TK</div>
-            <div class="ttd-space-lg">(................................................)</div>
-            <div class="ttd-name"><?= e($profil['kepala_sekolah'] ?: '..............................') ?></div>
+            <div class="ttd-space-lg"></div>
+            <div class="ttd-name"><strong>( <?= e($profil['kepala_sekolah'] ?: '................................................') ?> )</strong></div>
         </div>
 
         <p class="catatan">
-            <em>Catatan: Foto pada bagian dokumentasi merupakan contoh. Guru dapat mengunggah foto
-            kegiatan anak melalui menu Penilaian.</em>
+            <em>Catatan: Foto pada bagian dokumentasi merupakan kegiatan nyata anak selama proses pembelajaran. Guru dapat mengunggah foto melalui menu Penilaian.</em>
         </p>
 
         <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
     </div>
 </section>
+<?php endif; ?>
 
 </body>
 </html>

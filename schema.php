@@ -10,6 +10,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS users (
 $db->exec("CREATE TABLE IF NOT EXISTS profil (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     logo TEXT DEFAULT '',
+    background_rapot TEXT DEFAULT '',
     npsn TEXT DEFAULT '',
     nama_sekolah TEXT DEFAULT '',
     status TEXT DEFAULT '',
@@ -29,6 +30,10 @@ $db->exec("CREATE TABLE IF NOT EXISTS profil (
     semester TEXT DEFAULT '',
     footer TEXT DEFAULT 'SAHABAT GURU'
 )");
+
+try {
+    $db->exec("ALTER TABLE profil ADD COLUMN background_rapot TEXT DEFAULT ''");
+} catch (Exception $e) {}
 
 $db->exec("CREATE TABLE IF NOT EXISTS anak (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

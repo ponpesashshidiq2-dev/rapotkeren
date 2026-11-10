@@ -1,5 +1,9 @@
 @page { size: A4; margin: 0; }
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
 body {
     margin: 0;
     font-family: "Segoe UI", Arial, sans-serif;
@@ -10,32 +14,38 @@ body {
 
 /* Toolbar layar */
 .print-toolbar {
-    position: sticky; top: 0; z-index: 10;
-    background: #2f4858; color: #fff; padding: 10px 16px;
-    display: flex; gap: 14px; align-items: center;
+    position: sticky; top: 0; z-index: 100;
+    background: #0b3821; color: #fff; padding: 10px 20px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.25);
 }
-.print-toolbar button {
-    background: linear-gradient(135deg, #2e8b57 0%, #0d3b24 100%); color: #fff; border: 0; border-radius: 6px;
-    padding: 8px 18px; font-size: 14px; cursor: pointer; transition: opacity .2s;
+.print-toolbar button, .print-toolbar .btn-tab {
+    background: linear-gradient(135deg, #187a46 0%, #0b3821 100%); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
+    padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
 }
-.print-toolbar button:hover { opacity: .9; }
-.print-toolbar a { color: #9fd8f0; text-decoration: none; }
-.print-toolbar span { margin-left: auto; opacity: .8; font-size: 13px; }
+.print-toolbar button:hover, .print-toolbar .btn-tab:hover { opacity: .9; background: #187a46; }
+.print-toolbar .btn-tab.active {
+    background: #ffffff; color: #0b3821; border-color: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.print-toolbar a.back-link { color: #a7f3d0; text-decoration: none; font-weight: 600; margin-right: 8px; font-size: 13px; }
+.print-toolbar a.back-link:hover { text-decoration: underline; }
+.print-toolbar span.info-tag { margin-left: auto; opacity: .85; font-size: 12.5px; }
 
 /* ===== Halaman A4 ===== */
 .page {
     width: 210mm; min-height: 297mm;
-    margin: 14px auto;
+    margin: 16px auto;
     background: #fff;
     position: relative;
     padding: 10mm;
-    box-shadow: 0 3px 14px rgba(0,0,0,.18);
+    box-shadow: 0 4px 18px rgba(0,0,0,.15);
     page-break-after: always;
     overflow: hidden;
 }
 .page:last-child { page-break-after: auto; }
 
-/* Bingkai pink–biru seperti contoh */
+/* Bingkai rapot bawaan */
 .page-inner {
     position: relative;
     min-height: 277mm;
@@ -56,7 +66,7 @@ body {
 
 .head-bar {
     text-align: center; font-size: 11px; letter-spacing: .5px;
-    color: #d64d8c; font-weight: 600; margin-bottom: 8mm;
+    color: #187a46; font-weight: 700; margin-bottom: 7mm;
 }
 
 .footer {
@@ -66,12 +76,12 @@ body {
 
 /* Cover */
 .cover-title {
-    text-align: center; font-size: 22px; color: #2f4858; margin: 10mm 0 2mm;
-    letter-spacing: .5px;
+    text-align: center; font-size: 21px; color: #0b3821; margin: 8mm 0 2mm;
+    letter-spacing: .5px; font-weight: 800;
 }
 .cover-sub {
-    text-align: center; font-size: 18px; color: #d64d8c; margin: 0 0 8mm;
-    font-weight: 600;
+    text-align: center; font-size: 17px; color: #187a46; margin: 0 0 8mm;
+    font-weight: 700;
 }
 .logo-wrap { text-align: center; margin-bottom: 8mm; }
 .logo-wrap img { max-width: 130px; max-height: 130px; object-fit: contain; }
@@ -82,24 +92,24 @@ body {
 }
 
 .band {
-    text-align: center; padding: 3mm; font-size: 14px; font-weight: 600;
-    margin: 6mm 0 3mm; letter-spacing: .3px;
+    text-align: center; padding: 2.8mm; font-size: 13.5px; font-weight: 700;
+    margin: 5mm 0 3mm; letter-spacing: .3px;
 }
 .band-blue { background: #bfe4f6; color: #2f4858; }
-.band-pink { background: #fce4ef; color: #b0457c; }
-.band-yellow { background: #fbe7a1; color: #7a5c12; }
+.band-pink { background: #fce4ef; color: #0b3821; }
+.band-yellow { background: #fef3c7; color: #7a5c12; }
 
 table.identitas { width: 100%; border-collapse: collapse; }
-table.identitas td { padding: 1.6mm 2mm; vertical-align: top; font-size: 13px; }
-table.identitas .lbl { width: 52mm; font-weight: 500; }
+table.identitas td { padding: 1.5mm 2mm; vertical-align: top; font-size: 12.8px; }
+table.identitas .lbl { width: 52mm; font-weight: 600; color: #334155; }
 table.identitas .colon { width: 4mm; }
 
 .pemisah {
-    text-align: center; font-size: 10px; color: #b7c0c8; margin-top: 10mm;
+    text-align: center; font-size: 10px; color: #b7c0c8; margin-top: 8mm;
 }
 
 /* Data anak: foto + ttd */
-.sign-row { display: flex; justify-content: space-between; margin-top: 8mm; align-items: flex-end; }
+.sign-row { display: flex; justify-content: space-between; margin-top: 7mm; align-items: flex-end; }
 .photo-34 {
     width: 32mm; height: 44mm; border: 1.5px solid #555;
     display: flex; align-items: center; justify-content: center;
@@ -107,63 +117,71 @@ table.identitas .colon { width: 4mm; }
 }
 .photo-34 img { width: 100%; height: 100%; object-fit: cover; }
 .sign-right { text-align: center; width: 95mm; }
-.sign-line { border-bottom: 1.2px solid #333; padding-bottom: 1mm; margin-bottom: 1.5mm; }
+.sign-date { font-size: 12.5px; margin-bottom: 1.5mm; }
 .sign-label { font-size: 13px; font-weight: 600; }
-.sign-name { margin-top: 22mm; font-size: 13px; }
+.sign-space { height: 18mm; }
+.sign-name { font-size: 13px; font-weight: 700; text-decoration: underline; }
 
 /* Halaman CP */
 .meta { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
-.meta td { font-size: 12.5px; padding: 1mm 0; width: 50%; }
+.meta td { font-size: 12.5px; padding: 1mm 0; width: 50%; font-weight: 600; color: #334155; }
 .cp-title {
-    text-align: center; font-size: 16.5px; color: #d64d8c; margin: 5mm 0 6mm;
-    line-height: 1.5; font-weight: 700;
+    text-align: center; font-size: 15.5px; color: #0b3821; margin: 4mm 0 5mm;
+    line-height: 1.45; font-weight: 800;
 }
-.block { margin-bottom: 6mm; border-radius: 2mm; overflow: hidden; }
+.block { margin-bottom: 5mm; border-radius: 2mm; overflow: hidden; }
 .block-head {
-    color: #fff; font-size: 14px; font-weight: 700; padding: 3mm 5mm;
+    color: #fff; font-size: 13.5px; font-weight: 700; padding: 2.8mm 5mm;
 }
-.block-pink .block-head { background: #e879ad; }
-.block-blue .block-head { background: #4aa8cf; }
+.block-pink .block-head { background: #167a44; }
+.block-blue .block-head { background: #0b3821; }
 .block-body {
-    padding: 5mm; font-size: 13px; line-height: 1.75; min-height: 24mm;
+    padding: 4mm 5mm; font-size: 12.5px; line-height: 1.7; min-height: 20mm;
 }
-.block-pink .block-body { background: #fdf1f6; border: 1px solid #f3b7d2; border-top: 0; }
-.block-blue .block-body { background: #eef8fd; border: 1px solid #a9d9ee; border-top: 0; }
+.block-pink .block-body { background: #fafdfb; border: 1px solid #c2e0cf; border-top: 0; }
+.block-blue .block-body { background: #fbfdfc; border: 1px solid #c2e0cf; border-top: 0; }
 .muted-print { color: #a0aab2; font-style: italic; }
 
 .doc-title {
-    text-align: center; color: #4aa8cf; font-size: 15px; margin: 7mm 0 4mm;
+    text-align: center; color: #167a44; font-size: 14px; margin: 5mm 0 3.5mm; font-weight: 700;
 }
 .foto-row { display: flex; gap: 5mm; justify-content: center; }
+.foto-row.foto-single { justify-content: center; }
 .foto-cell {
-    width: 78mm; background: #eef8fd; border: 1px solid #a9d9ee;
+    width: 78mm; background: #f4fbf6; border: 1px solid #bce2cb;
     border-radius: 2mm; padding: 3mm;
 }
+.foto-cell.foto-cell-single {
+    width: 105mm;
+}
 .foto-img {
-    height: 52mm; background: #fff; border: 1px solid #d5e7f0;
+    height: 52mm; background: #fff; border: 1px solid #cce5d6;
     display: flex; align-items: center; justify-content: center; border-radius: 1.5mm;
     overflow: hidden;
 }
+.foto-cell.foto-cell-single .foto-img {
+    height: 58mm;
+}
 .foto-img img { width: 100%; height: 100%; object-fit: cover; }
-.foto-ket { font-size: 12px; padding: 2.5mm 1mm 0.5mm; color: #44525c; }
+.foto-ket { font-size: 12px; padding: 2.5mm 1mm 0.5mm; color: #334155; line-height: 1.4; }
 
 /* Lembar pengesahan */
-.pengesahan-meta { width: 100%; border-collapse: collapse; margin-top: 12mm; }
-.pengesahan-meta td { font-size: 13.5px; padding: 1.6mm 0; width: 50%; }
+.pengesahan-meta { width: 100%; border-collapse: collapse; margin-top: 10mm; }
+.pengesahan-meta td { font-size: 13.5px; padding: 1.6mm 0; width: 50%; font-weight: 600; }
 .pengesahan-text {
     text-align: center; font-size: 13.5px; line-height: 1.7;
-    margin: 8mm auto; max-width: 150mm;
+    margin: 7mm auto; max-width: 155mm;
 }
-.ttd-row { display: flex; justify-content: space-around; margin-top: 12mm; text-align: center; }
-.ttd { width: 65mm; }
-.ttd-role { font-size: 13.5px; }
-.ttd-space { margin-top: 26mm; font-size: 13px; }
-.ttd-center { text-align: center; margin-top: 16mm; font-size: 13.5px; line-height: 1.7; }
-.ttd-space-lg { margin-top: 22mm; font-size: 13px; }
-.ttd-name { font-weight: 600; margin-top: 2mm; }
+.ttd-row { display: flex; justify-content: space-around; margin-top: 10mm; text-align: center; }
+.ttd { width: 70mm; }
+.ttd-role { font-size: 13.5px; font-weight: 600; color: #1e293b; }
+.ttd-space { height: 20mm; }
+.ttd-center { text-align: center; margin-top: 12mm; font-size: 13.5px; line-height: 1.7; }
+.ttd-space-lg { height: 20mm; }
+.ttd-name { font-weight: 700; font-size: 13.5px; text-decoration: underline; color: #0f172a; }
 .catatan {
-    text-align: center; font-size: 11.5px; color: #66727b;
-    margin-top: 12mm; line-height: 1.6;
+    text-align: center; font-size: 11.5px; color: #64748b;
+    margin-top: 10mm; line-height: 1.6;
 }
 
 /* Saat cetak */

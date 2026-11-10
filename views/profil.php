@@ -5,23 +5,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fields = ['npsn','nama_sekolah','status','jenjang','alamat','rt_rw','desa','kecamatan',
                'kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
                'guru_kelompok','tahun_ajaran','semester','footer'];
-    $logo = getProfil($db)['logo'] ?? '';
-    if (!empty($_FILES['logo']['name'])) {
+    $curProfil = getProfil($db);
+    $logo = $curProfil['logo'] ?? '';
+    $backgroundRapot = $curProfil['background_rapot'] ?? '';
+
+    // Hapus logo jika diminta
+    if (!empty($_POST['hapus_logo'])) {
+        deleteUpload($logo);
+        $logo = '';
+    } elseif (!empty($_FILES['logo']['name'])) {
         $new = uploadFile('logo', 'logo');
         if ($new) {
             deleteUpload($logo);
             $logo = $new;
         }
     }
-    $sql = 'UPDATE profil SET logo = ?';
-    $params = [$logo];
+
+    // Hapus background rapot jika diminta
+    if (!empty($_POST['hapus_background_rapot'])) {
+        deleteUpload($backgroundRapot);
+        $backgroundRapot = '';
+    } elseif (!empty($_FILES['background_rapot']['name'])) {
+        $newBg = uploadFile('background_rapot', 'background');
+        if ($newBg) {
+            deleteUpload($backgroundRapot);
+            $backgroundRapot = $newBg;
+        }
+    }
+
+    $sql = 'UPDATE profil SET logo = ?, background_rapot = ?';
+    $params = [$logo, $backgroundRapot];
     foreach ($fields as $f) {
         $sql .= ", $f = ?";
         $params[] = trim($_POST[$f] ?? '');
     }
     $sql .= ' WHERE id = 1';
     $db->prepare($sql)->execute($params);
-    flash('Profil lembaga berhasil diperbarui.');
+    flash('Profil lembaga dan konfigurasi rapot berhasil diperbarui.');
     redirect('index.php?route=profil');
 }
 
@@ -30,7 +50,7 @@ page_header('Profil Lembaga', 'profil');
 ?>
 
 <div class="page-intro">
-    <p class="muted">Kelola identitas resmi satuan pendidikan PAUD/TK, logo resmi cover cetak, alamat sekolah, dan personalia penanggung jawab raport.</p>
+    <p class="muted">Kelola identitas resmi satuan pendidikan PAUD/TK, logo resmi cover cetak, background/bingkai rapot, alamat sekolah, dan personalia penanggung jawab tanda tangan.</p>
 </div>
 
 <form method="post" enctype="multipart/form-data" class="form-sections">
@@ -41,14 +61,14 @@ page_header('Profil Lembaga', 'profil');
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg>
             </div>
             <div>
-                <h3>Identitas Satuan Pendidikan</h3>
-                <p class="muted">Data pokok lembaga dan logo resmi yang dicetak pada halaman cover raport</p>
+                <h3>Identitas Satuan Pendidikan & Logo</h3>
+                <p class="muted">Data pokok lembaga dan logo resmi yang dicetak pada halaman cover raport dan header aplikasi</p>
             </div>
         </div>
 
         <div class="logo-upload-card">
             <div class="logo-preview-box">
-                <?php if (!empty($profil['logo'])): ?>
+                <?php if (!empty($profil['logo']) && file_exists(BASE_DIR . '/' . $profil['logo'])): ?>
                     <img src="<?= e($profil['logo']) ?>" alt="Logo Sekolah" id="logoPreviewImg">
                 <?php else: ?>
                     <div class="logo-empty-state" id="logoPreviewEmpty">
@@ -58,8 +78,8 @@ page_header('Profil Lembaga', 'profil');
                 <?php endif; ?>
             </div>
             <div class="logo-upload-info">
-                <div class="upload-title">Logo Sekolah</div>
-                <p class="upload-desc">Format berkas: JPG, PNG, atau WebP (disarankan latar transparan dengan rasio persegi). Tampil elegan di sampul raport cetak.</p>
+                <div class="upload-title">Logo Resmi Sekolah</div>
+                <p class="upload-desc">Format berkas: JPG, PNG, atau WebP (disarankan latar transparan). Tampil di cover raport dan header aplikasi.</p>
                 <div class="upload-btn-wrap">
                     <label class="btn btn-outline file-btn" for="logoInput">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x1="12" y1="3" y2="15"/></svg>
@@ -67,6 +87,12 @@ page_header('Profil Lembaga', 'profil');
                     </label>
                     <input type="file" id="logoInput" name="logo" accept="image/*" class="sr-only" onchange="previewLogo(this)">
                     <span class="file-name-hint" id="logoFileName">Tidak ada berkas baru dipilih</span>
+
+                    <?php if (!empty($profil['logo'])): ?>
+                    <label style="display:inline-flex; align-items:center; gap:6px; margin-left:10px; cursor:pointer; font-size:12.5px; color:#ef4444; font-weight:600;">
+                        <input type="checkbox" name="hapus_logo" value="1" style="width:auto; height:auto; accent-color:#ef4444;"> Hapus Logo
+                    </label>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -91,7 +117,54 @@ page_header('Profil Lembaga', 'profil');
         </div>
     </div>
 
-    <!-- Section 2: Alamat & Kontak -->
+    <!-- Section 2: Background / Bingkai Rapot A4 -->
+    <div class="panel form-card">
+        <div class="card-header">
+            <div class="card-header-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            </div>
+            <div>
+                <h3>Background / Bingkai Rapot (A4)</h3>
+                <p class="muted">Unggah gambar latar belakang atau template bingkai resmi cetak raport (ukuran kertas A4)</p>
+            </div>
+        </div>
+
+        <div class="logo-upload-card">
+            <div class="logo-preview-box" style="width: 85px; height: 120px; border-radius: 8px;">
+                <?php if (!empty($profil['background_rapot']) && file_exists(BASE_DIR . '/' . $profil['background_rapot'])): ?>
+                    <img src="<?= e($profil['background_rapot']) ?>" alt="Background Rapot" id="bgPreviewImg" style="object-fit: cover; width: 100%; height: 100%;">
+                <?php else: ?>
+                    <div class="logo-empty-state" id="bgPreviewEmpty">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                        <span>Bingkai Bawaan</span>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="logo-upload-info">
+                <div class="upload-title">Gambar Background / Template Bingkai Rapot</div>
+                <p class="upload-desc">
+                    Unggah gambar bingkai/kop resmi sekolah dalam format JPG atau PNG (orientasi Portrait A4, rasio 1:1.414).<br>
+                    Jika diunggah, gambar ini otomatis menjadi latar belakang di seluruh lembar cetak rapot (Cover, Biodata, Halaman CP, dan Pengesahan).
+                </p>
+                <div class="upload-btn-wrap">
+                    <label class="btn btn-outline file-btn" for="bgInput">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x1="12" y1="3" y2="15"/></svg>
+                        Pilih Gambar Background
+                    </label>
+                    <input type="file" id="bgInput" name="background_rapot" accept="image/*" class="sr-only" onchange="previewBg(this)">
+                    <span class="file-name-hint" id="bgFileName">Tidak ada berkas baru dipilih</span>
+
+                    <?php if (!empty($profil['background_rapot'])): ?>
+                    <label style="display:inline-flex; align-items:center; gap:6px; margin-left:10px; cursor:pointer; font-size:12.5px; color:#ef4444; font-weight:600;">
+                        <input type="checkbox" name="hapus_background_rapot" value="1" style="width:auto; height:auto; accent-color:#ef4444;"> Hapus Background (Gunakan Bawaan)
+                    </label>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Alamat & Kontak -->
     <div class="panel form-card">
         <div class="card-header">
             <div class="card-header-icon">
@@ -143,15 +216,15 @@ page_header('Profil Lembaga', 'profil');
         </div>
     </div>
 
-    <!-- Section 3: Periode & Pengesahan -->
+    <!-- Section 4: Periode & Personalia Tanda Tangan -->
     <div class="panel form-card">
         <div class="card-header">
             <div class="card-header-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
             <div>
-                <h3>Periode Ajaran & Personalia Pengesahan</h3>
-                <p class="muted">Pengaturan semester dan nama penandatangan lembar pengesahan raport</p>
+                <h3>Periode Ajaran & Personalia Penandatangan</h3>
+                <p class="muted">Nama yang diinput di sini otomatis diambil dan dicantumkan pada kolom tanda tangan lembar pengesahan dan data anak</p>
             </div>
         </div>
 
@@ -175,12 +248,12 @@ page_header('Profil Lembaga', 'profil');
                 <input type="text" id="footer" name="footer" value="<?= e($profil['footer']) ?>" placeholder="Misal: SAHABAT GURU">
             </div>
             <div class="form-group col-span-2">
-                <label for="kepala_sekolah">Nama Kepala Sekolah</label>
-                <input type="text" id="kepala_sekolah" name="kepala_sekolah" value="<?= e($profil['kepala_sekolah']) ?>" placeholder="Nama lengkap beserta gelar">
+                <label for="kepala_sekolah">Nama Kepala Sekolah (Dicantumkan di Tanda Tangan)</label>
+                <input type="text" id="kepala_sekolah" name="kepala_sekolah" value="<?= e($profil['kepala_sekolah']) ?>" placeholder="Nama lengkap beserta gelar (mis. Dra. Hj. Siti Aminah, M.Pd)">
             </div>
             <div class="form-group">
-                <label for="guru_kelompok">Nama Guru Kelompok</label>
-                <input type="text" id="guru_kelompok" name="guru_kelompok" value="<?= e($profil['guru_kelompok']) ?>" placeholder="Nama guru kelas">
+                <label for="guru_kelompok">Nama Guru Kelompok (Dicantumkan di Tanda Tangan)</label>
+                <input type="text" id="guru_kelompok" name="guru_kelompok" value="<?= e($profil['guru_kelompok']) ?>" placeholder="Nama lengkap guru kelas / wali kelompok">
             </div>
         </div>
     </div>
@@ -189,11 +262,11 @@ page_header('Profil Lembaga', 'profil');
     <div class="form-action-bar">
         <div class="bar-notice">
             <span class="notice-badge">INFO</span>
-            <span>Perubahan data profil akan langsung diterapkan pada seluruh dokumen cetak raport.</span>
+            <span>Perubahan data profil, tanda tangan, dan background langsung diterapkan pada seluruh dokumen cetak raport.</span>
         </div>
         <button type="submit" class="btn btn-primary btn-lg">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            Simpan Profil Lembaga
+            Simpan Pengaturan Profil & Rapot
         </button>
     </div>
 </form>
@@ -205,8 +278,21 @@ function previewLogo(input) {
         document.getElementById('logoFileName').textContent = file.name;
         const reader = new FileReader();
         reader.onload = function(e) {
-            const previewBox = document.querySelector('.logo-preview-box');
+            const previewBox = document.querySelectorAll('.logo-preview-box')[0];
             previewBox.innerHTML = '<img src="' + e.target.result + '" alt="Preview Logo" id="logoPreviewImg">';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function previewBg(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById('bgFileName').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewBox = document.querySelectorAll('.logo-preview-box')[1];
+            previewBox.innerHTML = '<img src="' + e.target.result + '" alt="Preview Background" id="bgPreviewImg" style="object-fit:cover; width:100%; height:100%;">';
         };
         reader.readAsDataURL(file);
     }

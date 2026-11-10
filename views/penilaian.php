@@ -154,7 +154,15 @@ $panggilan = $anak['nama_panggilan'] ?: $anak['nama_lengkap'];
             <strong><?= e($anak['nama_lengkap']) ?></strong><br>
             <span class="muted">Kelompok: <?= e($anak['kelompok'] ?: '-') ?> · Usia: <?= e($anak['tanggal_lahir'] ?: '-') ?></span>
         </div>
-        <div class="muted">CP: <strong><?= e($cp['nama']) ?></strong></div>
+        <div class="muted">
+            CP: <strong><?= e($cp['nama']) ?></strong>
+            <?php $isSplit = (strpos(strtolower($cp['nama']), 'jati diri') !== false || strpos(strtolower($cp['nama']), 'literasi') !== false); ?>
+            <?php if ($isSplit): ?>
+                <span style="display:inline-block; margin-left:8px; padding:3px 9px; border-radius:6px; background:#dcfce7; color:#15803d; font-size:12px; font-weight:700;">Dicetak 2 Lembar A4</span>
+            <?php else: ?>
+                <span style="display:inline-block; margin-left:8px; padding:3px 9px; border-radius:6px; background:var(--hijau-soft); color:var(--hijau-botol); font-size:12px; font-weight:600;">Dicetak 1 Lembar A4</span>
+            <?php endif; ?>
+        </div>
     </div>
 
     <form method="post" enctype="multipart/form-data">
@@ -201,7 +209,14 @@ $panggilan = $anak['nama_panggilan'] ?: $anak['nama_lengkap'];
 
         <!-- Foto kegiatan -->
         <div class="sub-block">
-            <div class="sub-head"><strong>Dokumentasi Kegiatan Anak (maks. 2 foto)</strong></div>
+            <div class="sub-head">
+                <strong>Dokumentasi Kegiatan Anak (maks. 2 foto)</strong>
+                <?php if ($isSplit): ?>
+                    <span class="muted" style="font-size:12px; font-weight:normal;">Foto 1 dicetak di Lembar 1 &bull; Foto 2 dicetak di Lembar 2</span>
+                <?php else: ?>
+                    <span class="muted" style="font-size:12px; font-weight:normal;">Foto 1 & 2 dicetak berdampingan di 1 lembar CP</span>
+                <?php endif; ?>
+            </div>
             <div class="foto-grid">
                 <?php for ($i = 1; $i <= 2; $i++): $f = $fotos[$i] ?? null; ?>
                 <div class="foto-slot">
