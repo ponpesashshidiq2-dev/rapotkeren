@@ -5,6 +5,8 @@ $rows = $db->query('SELECT * FROM anak ORDER BY nama_lengkap')->fetchAll();
 ?>
 <div class="toolbar">
     <a class="btn btn-primary" href="index.php?route=anak_form">+ Tambah Anak</a>
+    <a class="btn" href="index.php?route=anak_import">⬆ Import Excel</a>
+    <a class="btn" href="index.php?route=anak_import&template=1">⬇ Template</a>
 </div>
 
 <?php if (!$rows): ?>

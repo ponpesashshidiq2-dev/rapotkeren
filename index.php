@@ -48,6 +48,10 @@ switch ($route) {
         require __DIR__ . '/views/anak_form.php';
         break;
 
+    case 'anak_import':
+        require __DIR__ . '/views/anak_import.php';
+        break;
+
     case 'anak_delete':
         if ($method === 'POST') {
             $id = (int)($_POST['id'] ?? 0);
