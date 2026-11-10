@@ -124,10 +124,10 @@ table.identitas .colon { width: 4mm; }
 
 /* Halaman CP */
 .meta { width: 100%; border-collapse: collapse; margin-bottom: 3mm; table-layout: fixed; }
-.meta td { font-size: 12.5px; padding: 1mm 0; font-weight: 700; color: #0b3821; vertical-align: top; }
-.meta .m-lbl { width: 27mm; }
-.meta .m-col { width: 3mm; text-align: left; }
-.meta .m-val { width: 53mm; }
+.meta td { font-size: 12.5px; padding: 1.4mm 0; font-weight: 700; color: #0b3821; vertical-align: top; }
+.meta .m-lbl { width: 34mm; white-space: nowrap; }
+.meta .m-col { width: 5mm; padding-left: 1mm; }
+.meta .m-val { padding-left: 1.5mm; word-break: break-word; }
 .cp-title {
     text-align: center; font-size: 14px; color: #0b3821; margin: 4mm 0 5mm;
     line-height: 1.45; font-weight: 800;
