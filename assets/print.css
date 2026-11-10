@@ -15,9 +15,10 @@ body {
     display: flex; gap: 14px; align-items: center;
 }
 .print-toolbar button {
-    background: var(--pink, #ec6fa8); color: #fff; border: 0; border-radius: 6px;
-    padding: 8px 18px; font-size: 14px; cursor: pointer;
+    background: linear-gradient(135deg, #2e8b57 0%, #0d3b24 100%); color: #fff; border: 0; border-radius: 6px;
+    padding: 8px 18px; font-size: 14px; cursor: pointer; transition: opacity .2s;
 }
+.print-toolbar button:hover { opacity: .9; }
 .print-toolbar a { color: #9fd8f0; text-decoration: none; }
 .print-toolbar span { margin-left: auto; opacity: .8; font-size: 13px; }
 
