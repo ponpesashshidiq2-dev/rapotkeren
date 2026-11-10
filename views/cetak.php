@@ -21,6 +21,8 @@ $profil = getProfil($db);
         <ul style="margin:0 0 0 18px; padding:0; line-height:1.8; font-size:13.5px; color:var(--text-secondary);">
             <li><strong>Cover & Biodata</strong>: Terpisah dari isi raport (2 halaman: Sampul Sekolah & Biodata Anak + Pasfoto).</li>
             <li><strong>Isi Raport CP</strong>: 1 CP dicetak 1 lembar A4, <em>kecuali</em> <strong>Jati Diri</strong> dan <strong>Dasar Literasi, Matematika, Sains, Tekno & Seni</strong> yang dibagi menjadi <strong>2 lembar</strong> agar rapi dan tidak terpotong.</li>
+            <li><strong>Deskripsi</strong>: Terisi otomatis dari <strong>skor 1–4</strong> pada menu <a href="index.php?route=penilaian" style="font-weight:600; text-decoration:underline;">Penilaian</a> (frasa predikat muncul setelah nama anak sebelum detail capaian).</li>
+            <li><strong>Foto Kegiatan</strong>: 2 foto per lembar CP — diunggah lewat menu <a href="index.php?route=foto" style="font-weight:600; text-decoration:underline;">Foto Kegiatan</a> (CP terbagi 2 lembar = 4 foto).</li>
             <li><strong>Lembar Pengesahan</strong>: 1 lembar memuat tanda tangan otomatis dari data profil (Kepala Sekolah & Guru Kelompok).</li>
             <?php if (!empty($profil['background_rapot'])): ?>
             <li><strong>Background Rapot Kustom Aktif</strong>: Menggunakan gambar background/bingkai yang diunggah di menu <a href="index.php?route=profil" style="font-weight:600; text-decoration:underline;">Profil</a>.</li>

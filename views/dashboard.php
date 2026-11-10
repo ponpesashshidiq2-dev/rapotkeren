@@ -24,7 +24,7 @@ $profil = getProfil($db);
     </div>
     <div class="card">
         <div class="card-num"><?= $tercentang ?></div>
-        <div class="card-label">Penilaian Dicentang</div>
+        <div class="card-label">Capaian Dinilai (Skor 1–4)</div>
     </div>
     <div class="card">
         <div class="card-num"><?= $foto ?></div>
@@ -71,8 +71,9 @@ $profil = getProfil($db);
         <li>Lengkapi <strong><a href="index.php?route=profil">Profil Lembaga</a></strong> — atur nama satuan PAUD/TK, alamat, serta unggah logo untuk cover.</li>
         <li>Kelola daftar anak pada menu <strong><a href="index.php?route=anak">Data Anak</a></strong> (bisa input manual atau import file Excel/CSV).</li>
         <li>Tinjau dan sesuaikan <strong><a href="index.php?route=capaian">Data Capaian</a></strong> — per sub-bidang & capaian indikator (bisa ditambah/diubah).</li>
-        <li>Buka menu <strong><a href="index.php?route=penilaian">Penilaian</a></strong> — centang capaian (deskripsi otomatis terbuat & dapat diedit) serta upload 2 foto kegiatan per CP.</li>
-        <li>Buka <strong><a href="index.php?route=cetak">Cetak Raport</a></strong> — menghasilkan dokumen cetak A4 lengkap (Cover, Identitas Anak, 5 Halaman CP + Foto, Lembar Pengesahan).</li>
+        <li>Buka menu <strong><a href="index.php?route=penilaian">Penilaian</a></strong> — beri <strong>skor 1–4</strong> untuk tiap capaian (deskripsi otomatis terisi dengan frasa predikat & bisa diedit manual).</li>
+        <li>Buka menu <strong><a href="index.php?route=foto">Foto Kegiatan</a></strong> — unggah 2 foto per lembar CP (Jati Diri & Literasi terbagi 2 lembar = 4 foto).</li>
+        <li>Buka <strong><a href="index.php?route=cetak">Cetak Raport</a></strong> — menghasilkan dokumen cetak A4 lengkap (Cover, Identitas Anak, 7 Lembar CP + Foto, Lembar Pengesahan).</li>
     </ol>
 </div>
 <?php page_footer(); ?>

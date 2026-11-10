@@ -14,11 +14,11 @@ if (!$anak) redirect('index.php?route=cetak');
 $profil = getProfil($db);
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 
-// centang capaian
-$checked = [];
-$st = $db->prepare('SELECT capaian_id FROM penilaian WHERE anak_id = ?');
+// skor capaian (1-4)
+$skors = [];
+$st = $db->prepare('SELECT capaian_id, skor FROM penilaian WHERE anak_id = ?');
 $st->execute([$anakId]);
-foreach ($st->fetchAll() as $r) $checked[(int)$r['capaian_id']] = true;
+foreach ($st->fetchAll() as $r) $skors[(int)$r['capaian_id']] = (int)$r['skor'];
 
 // manual deskripsi override
 $manual = [];
@@ -27,22 +27,6 @@ $st->execute([$anakId]);
 foreach ($st->fetchAll() as $r) $manual[(int)$r['sub_cp_id']] = $r['teks'];
 
 $panggilan = $anak['nama_panggilan'] ?: $anak['nama_lengkap'];
-
-if (!function_exists('autoText')) {
-    function autoText($subId, $checked, $db) {
-        $st = $db->prepare('SELECT id, teks FROM capaian WHERE sub_cp_id = ? ORDER BY urutan, id');
-        $st->execute([$subId]);
-        $picked = [];
-        foreach ($st->fetchAll() as $r) {
-            if (!empty($checked[(int)$r['id']])) $picked[] = $r['teks'];
-        }
-        if (!$picked) return '';
-        $n = count($picked);
-        if ($n === 1) return $picked[0];
-        $last = array_pop($picked);
-        return implode(', ', $picked) . ', dan ' . $last;
-    }
-}
 
 if (!function_exists('usia')) {
     function usia($tgl) {
@@ -56,6 +40,8 @@ if (!function_exists('usia')) {
         } catch (Exception $e) { return '-'; }
     }
 }
+
+require_once BASE_DIR . '/src/deskripsi.php';
 
 if (!function_exists('isSplitCp')) {
     function isSplitCp($namaCp) {
@@ -251,12 +237,12 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
     foreach ($st->fetchAll() as $r) $fotos[(int)$r['urutan']] = $r;
 
     $split = isSplitCp($cp['nama']);
-    // Jika split: pisah jadi 2 halaman (misal 3 sub-bidang di hal 1, sisanya di hal 2)
+    // Jika split: 2 halaman, masing-masing tetap 2 foto (lembar 1: foto 1&2, lembar 2: foto 3&4)
     $pages = $split ? [
-        ['title_suffix' => ' (BAGIAN 1)', 'subs' => array_slice($subs, 0, 3), 'foto_num' => 1],
-        ['title_suffix' => ' (BAGIAN 2)', 'subs' => array_slice($subs, 3),    'foto_num' => 2],
+        ['title_suffix' => ' (BAGIAN 1)', 'subs' => array_slice($subs, 0, 3), 'foto_start' => 1],
+        ['title_suffix' => ' (BAGIAN 2)', 'subs' => array_slice($subs, 3),    'foto_start' => 3],
     ] : [
-        ['title_suffix' => '', 'subs' => $subs, 'foto_num' => 0], // 0 berarti tampilkan 2 foto
+        ['title_suffix' => '', 'subs' => $subs, 'foto_start' => 1],
     ];
     ?>
 
@@ -267,12 +253,12 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 
             <table class="meta">
                 <tr>
-                    <td>Nama Anak : <?= e($anak['nama_lengkap']) ?></td>
-                    <td>Kelompok : <?= e($anak['kelompok'] ?: '-') ?></td>
+                    <td class="m-lbl">Nama Anak</td><td class="m-col">:</td><td class="m-val"><?= e($anak['nama_lengkap']) ?></td>
+                    <td class="m-lbl">Kelompok</td><td class="m-col">:</td><td class="m-val"><?= e($anak['kelompok'] ?: '-') ?></td>
                 </tr>
                 <tr>
-                    <td>Usia : <?= e(usia($anak['tanggal_lahir'])) ?></td>
-                    <td>Tahun Ajaran : <?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)</td>
+                    <td class="m-lbl">Usia</td><td class="m-col">:</td><td class="m-val"><?= e(usia($anak['tanggal_lahir'])) ?></td>
+                    <td class="m-lbl">Tahun Ajaran</td><td class="m-col">:</td><td class="m-val"><?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)</td>
                 </tr>
             </table>
 
@@ -283,7 +269,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             foreach ($pInfo['subs'] as $sub):
                 $color++;
                 $pink = ($color % 2 === 1);
-                $auto = autoText((int)$sub['id'], $checked, $db);
+                $auto = capaianSkorText((int)$sub['id'], $skors, $db);
                 $text = trim($manual[(int)$sub['id']] ?? '');
                 if ($text === '' && $auto !== '') $text = 'Ananda ' . $panggilan . ' ' . $auto . '.';
             ?>
@@ -293,45 +279,29 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                     <?php if ($text): ?>
                         <?= e($text) ?>
                     <?php else: ?>
-                        <span class="muted-print">Belum ada capaian yang dicentang untuk sub-bidang ini.</span>
+                        <span class="muted-print">Belum ada skor capaian untuk sub-bidang ini.</span>
                     <?php endif; ?>
                 </div>
             </div>
             <?php endforeach; ?>
 
             <h3 class="doc-title">✿ DOKUMENTASI KEGIATAN ANAK ✿</h3>
-            <?php if ($pInfo['foto_num'] > 0): ?>
-                <!-- Mode Split: 1 foto per lembar -->
-                <?php $f = $fotos[$pInfo['foto_num']] ?? null; ?>
-                <div class="foto-row foto-single">
-                    <div class="foto-cell foto-cell-single">
-                        <div class="foto-img">
-                            <?php if (!empty($f['file']) && file_exists(BASE_DIR . '/' . $f['file'])): ?>
-                                <img src="<?= e($f['file']) ?>" alt="Foto kegiatan">
-                            <?php else: ?>
-                                <span class="muted-print">Foto Dokumentasi Kegiatan <?= $pInfo['foto_num'] ?></span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="foto-ket"><strong>Keterangan:</strong> <?= e($f['keterangan'] ?? '-') ?></div>
+            <!-- Selalu 2 foto per lembar (lembar split lanjutan: foto 3&4) -->
+            <?php $fs = $pInfo['foto_start']; ?>
+            <div class="foto-row">
+                <?php for ($i = $fs; $i < $fs + 2; $i++): $f = $fotos[$i] ?? null; ?>
+                <div class="foto-cell">
+                    <div class="foto-img">
+                        <?php if (!empty($f['file']) && file_exists(BASE_DIR . '/' . $f['file'])): ?>
+                            <img src="<?= e($f['file']) ?>" alt="Foto kegiatan <?= $i ?>">
+                        <?php else: ?>
+                            <span class="muted-print">Foto Kegiatan <?= $i ?></span>
+                        <?php endif; ?>
                     </div>
+                    <div class="foto-ket"><strong>Keterangan:</strong> <?= e($f['keterangan'] ?? '-') ?></div>
                 </div>
-            <?php else: ?>
-                <!-- Mode Normal: 2 foto berdampingan -->
-                <div class="foto-row">
-                    <?php for ($i = 1; $i <= 2; $i++): $f = $fotos[$i] ?? null; ?>
-                    <div class="foto-cell">
-                        <div class="foto-img">
-                            <?php if (!empty($f['file']) && file_exists(BASE_DIR . '/' . $f['file'])): ?>
-                                <img src="<?= e($f['file']) ?>" alt="Foto kegiatan <?= $i ?>">
-                            <?php else: ?>
-                                <span class="muted-print">Foto Kegiatan <?= $i ?></span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="foto-ket"><strong>Keterangan:</strong> <?= e($f['keterangan'] ?? '-') ?></div>
-                    </div>
-                    <?php endfor; ?>
-                </div>
-            <?php endif; ?>
+                <?php endfor; ?>
+            </div>
 
             <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
         </div>
@@ -388,7 +358,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
         </div>
 
         <p class="catatan">
-            <em>Catatan: Foto pada bagian dokumentasi merupakan kegiatan nyata anak selama proses pembelajaran. Guru dapat mengunggah foto melalui menu Penilaian.</em>
+            <em>Catatan: Foto pada bagian dokumentasi merupakan kegiatan nyata anak selama proses pembelajaran. Guru dapat mengunggah foto melalui menu Foto Kegiatan.</em>
         </p>
 
         <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>

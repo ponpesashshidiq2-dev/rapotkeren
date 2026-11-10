@@ -99,9 +99,9 @@ body {
 .band-pink { background: #fce4ef; color: #0b3821; }
 .band-yellow { background: #fef3c7; color: #7a5c12; }
 
-table.identitas { width: 100%; border-collapse: collapse; }
-table.identitas td { padding: 1.5mm 2mm; vertical-align: top; font-size: 12.8px; }
-table.identitas .lbl { width: 52mm; font-weight: 600; color: #334155; }
+table.identitas { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.identitas td { padding: 1.5mm 2mm; vertical-align: top; font-size: 12.8px; font-weight: 700; color: #0b3821; }
+table.identitas .lbl { width: 52mm; font-weight: 700; }
 table.identitas .colon { width: 4mm; }
 
 .pemisah {
@@ -123,10 +123,13 @@ table.identitas .colon { width: 4mm; }
 .sign-name { font-size: 13px; font-weight: 700; text-decoration: underline; }
 
 /* Halaman CP */
-.meta { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
-.meta td { font-size: 12.5px; padding: 1mm 0; width: 50%; font-weight: 600; color: #334155; }
+.meta { width: 100%; border-collapse: collapse; margin-bottom: 3mm; table-layout: fixed; }
+.meta td { font-size: 12.5px; padding: 1mm 0; font-weight: 700; color: #0b3821; vertical-align: top; }
+.meta .m-lbl { width: 27mm; }
+.meta .m-col { width: 3mm; text-align: left; }
+.meta .m-val { width: 53mm; }
 .cp-title {
-    text-align: center; font-size: 15.5px; color: #0b3821; margin: 4mm 0 5mm;
+    text-align: center; font-size: 14px; color: #0b3821; margin: 4mm 0 5mm;
     line-height: 1.45; font-weight: 800;
 }
 .block { margin-bottom: 5mm; border-radius: 2mm; overflow: hidden; }

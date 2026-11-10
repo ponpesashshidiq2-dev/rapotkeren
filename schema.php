@@ -87,10 +87,22 @@ $db->exec("CREATE TABLE IF NOT EXISTS penilaian (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     anak_id INTEGER NOT NULL,
     capaian_id INTEGER NOT NULL,
+    skor INTEGER DEFAULT 0,
     UNIQUE(anak_id, capaian_id),
     FOREIGN KEY (anak_id) REFERENCES anak(id) ON DELETE CASCADE,
     FOREIGN KEY (capaian_id) REFERENCES capaian(id) ON DELETE CASCADE
 )");
+
+// Migrasi: tambah kolom skor (1-4) bila belum ada
+$hasSkor = false;
+foreach ($db->query('PRAGMA table_info(penilaian)') as $c) {
+    if ($c['name'] === 'skor') { $hasSkor = true; break; }
+}
+if (!$hasSkor) {
+    $db->exec('ALTER TABLE penilaian ADD COLUMN skor INTEGER DEFAULT 0');
+    // Baris lama (centang lama) dianggap "berkembang sesuai harapan" (3)
+    $db->exec('UPDATE penilaian SET skor = 3 WHERE skor = 0 OR skor IS NULL');
+}
 
 $db->exec("CREATE TABLE IF NOT EXISTS deskripsi (
     anak_id INTEGER NOT NULL,
