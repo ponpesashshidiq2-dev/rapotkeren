@@ -29,25 +29,43 @@ function page_header($title, $active = '') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($title) ?> - Raport TK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
 <div class="app">
     <aside class="sidebar">
-        <div class="brand">✿ Raport TK</div>
+        <div class="brand">
+            <div class="brand-badge">✿</div>
+            <div class="brand-info">
+                <span class="brand-title">Raport TK</span>
+                <span class="brand-tag">Sistem Penilaian PAUD</span>
+            </div>
+        </div>
         <nav>
         <?php foreach ($nav as $key => [$label, $url]): ?>
             <a href="<?= e($url) ?>" class="<?= $active === $key ? 'active' : '' ?>">
-                <span class="nav-icon"><?= nav_icon($key) ?></span><?= e($label) ?>
+                <span class="nav-icon"><?= nav_icon($key) ?></span>
+                <span class="nav-label"><?= e($label) ?></span>
             </a>
         <?php endforeach; ?>
         </nav>
-        <a class="logout" href="index.php?route=logout">
-            <span class="nav-icon"><?= nav_icon('logout') ?></span>Keluar (<?= e($_SESSION['user']) ?>)
-        </a>
+        <div class="sidebar-footer">
+            <a class="logout" href="index.php?route=logout">
+                <span class="nav-icon"><?= nav_icon('logout') ?></span>
+                <span>Keluar (<?= e($_SESSION['user']) ?>)</span>
+            </a>
+        </div>
     </aside>
     <main class="content">
-        <h1 class="page-title"><?= e($title) ?></h1>
+        <div class="content-header">
+            <div>
+                <div class="breadcrumbs">Aplikasi Raport &rsaquo; <span><?= e($title) ?></span></div>
+                <h1 class="page-title"><?= e($title) ?></h1>
+            </div>
+        </div>
         <?php if ($flash): ?>
             <div class="alert alert-<?= e($flash['type']) ?>"><?= e($flash['msg']) ?></div>
         <?php endif; ?>
