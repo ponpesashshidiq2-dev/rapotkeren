@@ -1,0 +1,174 @@
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #2f4858;
+    background: #eef1f4;
+    font-size: 13px;
+}
+
+/* Toolbar layar */
+.print-toolbar {
+    position: sticky; top: 0; z-index: 10;
+    background: #2f4858; color: #fff; padding: 10px 16px;
+    display: flex; gap: 14px; align-items: center;
+}
+.print-toolbar button {
+    background: var(--pink, #ec6fa8); color: #fff; border: 0; border-radius: 6px;
+    padding: 8px 18px; font-size: 14px; cursor: pointer;
+}
+.print-toolbar a { color: #9fd8f0; text-decoration: none; }
+.print-toolbar span { margin-left: auto; opacity: .8; font-size: 13px; }
+
+/* ===== Halaman A4 ===== */
+.page {
+    width: 210mm; min-height: 297mm;
+    margin: 14px auto;
+    background: #fff;
+    position: relative;
+    padding: 10mm;
+    box-shadow: 0 3px 14px rgba(0,0,0,.18);
+    page-break-after: always;
+    overflow: hidden;
+}
+.page:last-child { page-break-after: auto; }
+
+/* Bingkai pink–biru seperti contoh */
+.page-inner {
+    position: relative;
+    min-height: 277mm;
+    border: 3px solid #f3a8c6;
+    padding: 12mm 12mm 14mm;
+    background:
+        linear-gradient(90deg, rgba(252,228,239,.9) 0 26px, rgba(255,255,255,0) 26px),
+        linear-gradient(270deg, rgba(206,235,249,.9) 0 26px, rgba(255,255,255,0) 26px),
+        #fff;
+}
+.page-inner::before,
+.page-inner::after {
+    content: ""; position: absolute; width: 46px; height: 46px; border-radius: 50%;
+    opacity: .55;
+}
+.page-inner::before { left: -18px; bottom: 40px; background: #f8c8de; }
+.page-inner::after { right: -18px; top: 70px; background: #bfe4f6; }
+
+.head-bar {
+    text-align: center; font-size: 11px; letter-spacing: .5px;
+    color: #d64d8c; font-weight: 600; margin-bottom: 8mm;
+}
+
+.footer {
+    position: absolute; left: 0; right: 0; bottom: 5mm;
+    text-align: center; font-size: 10px; color: #9aa7b1;
+}
+
+/* Cover */
+.cover-title {
+    text-align: center; font-size: 22px; color: #2f4858; margin: 10mm 0 2mm;
+    letter-spacing: .5px;
+}
+.cover-sub {
+    text-align: center; font-size: 18px; color: #d64d8c; margin: 0 0 8mm;
+    font-weight: 600;
+}
+.logo-wrap { text-align: center; margin-bottom: 8mm; }
+.logo-wrap img { max-width: 130px; max-height: 130px; object-fit: contain; }
+.logo-placeholder {
+    width: 130px; height: 130px; margin: 0 auto; border: 2px dashed #9ccfe8;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    color: #9ccfe8; font-weight: 700;
+}
+
+.band {
+    text-align: center; padding: 3mm; font-size: 14px; font-weight: 600;
+    margin: 6mm 0 3mm; letter-spacing: .3px;
+}
+.band-blue { background: #bfe4f6; color: #2f4858; }
+.band-pink { background: #fce4ef; color: #b0457c; }
+.band-yellow { background: #fbe7a1; color: #7a5c12; }
+
+table.identitas { width: 100%; border-collapse: collapse; }
+table.identitas td { padding: 1.6mm 2mm; vertical-align: top; font-size: 13px; }
+table.identitas .lbl { width: 52mm; font-weight: 500; }
+table.identitas .colon { width: 4mm; }
+
+.pemisah {
+    text-align: center; font-size: 10px; color: #b7c0c8; margin-top: 10mm;
+}
+
+/* Data anak: foto + ttd */
+.sign-row { display: flex; justify-content: space-between; margin-top: 8mm; align-items: flex-end; }
+.photo-34 {
+    width: 32mm; height: 44mm; border: 1.5px solid #555;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #888; background: #fff;
+}
+.photo-34 img { width: 100%; height: 100%; object-fit: cover; }
+.sign-right { text-align: center; width: 95mm; }
+.sign-line { border-bottom: 1.2px solid #333; padding-bottom: 1mm; margin-bottom: 1.5mm; }
+.sign-label { font-size: 13px; font-weight: 600; }
+.sign-name { margin-top: 22mm; font-size: 13px; }
+
+/* Halaman CP */
+.meta { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+.meta td { font-size: 12.5px; padding: 1mm 0; width: 50%; }
+.cp-title {
+    text-align: center; font-size: 16.5px; color: #d64d8c; margin: 5mm 0 6mm;
+    line-height: 1.5; font-weight: 700;
+}
+.block { margin-bottom: 6mm; border-radius: 2mm; overflow: hidden; }
+.block-head {
+    color: #fff; font-size: 14px; font-weight: 700; padding: 3mm 5mm;
+}
+.block-pink .block-head { background: #e879ad; }
+.block-blue .block-head { background: #4aa8cf; }
+.block-body {
+    padding: 5mm; font-size: 13px; line-height: 1.75; min-height: 24mm;
+}
+.block-pink .block-body { background: #fdf1f6; border: 1px solid #f3b7d2; border-top: 0; }
+.block-blue .block-body { background: #eef8fd; border: 1px solid #a9d9ee; border-top: 0; }
+.muted-print { color: #a0aab2; font-style: italic; }
+
+.doc-title {
+    text-align: center; color: #4aa8cf; font-size: 15px; margin: 7mm 0 4mm;
+}
+.foto-row { display: flex; gap: 5mm; justify-content: center; }
+.foto-cell {
+    width: 78mm; background: #eef8fd; border: 1px solid #a9d9ee;
+    border-radius: 2mm; padding: 3mm;
+}
+.foto-img {
+    height: 52mm; background: #fff; border: 1px solid #d5e7f0;
+    display: flex; align-items: center; justify-content: center; border-radius: 1.5mm;
+    overflow: hidden;
+}
+.foto-img img { width: 100%; height: 100%; object-fit: cover; }
+.foto-ket { font-size: 12px; padding: 2.5mm 1mm 0.5mm; color: #44525c; }
+
+/* Lembar pengesahan */
+.pengesahan-meta { width: 100%; border-collapse: collapse; margin-top: 12mm; }
+.pengesahan-meta td { font-size: 13.5px; padding: 1.6mm 0; width: 50%; }
+.pengesahan-text {
+    text-align: center; font-size: 13.5px; line-height: 1.7;
+    margin: 8mm auto; max-width: 150mm;
+}
+.ttd-row { display: flex; justify-content: space-around; margin-top: 12mm; text-align: center; }
+.ttd { width: 65mm; }
+.ttd-role { font-size: 13.5px; }
+.ttd-space { margin-top: 26mm; font-size: 13px; }
+.ttd-center { text-align: center; margin-top: 16mm; font-size: 13.5px; line-height: 1.7; }
+.ttd-space-lg { margin-top: 22mm; font-size: 13px; }
+.ttd-name { font-weight: 600; margin-top: 2mm; }
+.catatan {
+    text-align: center; font-size: 11.5px; color: #66727b;
+    margin-top: 12mm; line-height: 1.6;
+}
+
+/* Saat cetak */
+@media print {
+    body { background: #fff; }
+    .no-print { display: none !important; }
+    .page { margin: 0; box-shadow: none; width: auto; min-height: auto; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+}

@@ -1,0 +1,16 @@
+# Database & data user
+data/*.sqlite
+data/*.sqlite-journal
+data/*.png
+
+# Uploads (jangan commit foto/logo user)
+uploads/**/*
+!uploads/**/
+!uploads/**/.gitkeep
+
+# File sistem & editor
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
