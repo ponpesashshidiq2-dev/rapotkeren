@@ -13,7 +13,7 @@ body {
     margin: 0;
     font-family: "Segoe UI", Arial, sans-serif;
     color: var(--text);
-    background: #f6f8fa;
+    background: #bff0e4; /* hijau telur bebek */
 }
 a { color: var(--blue); }
 
@@ -168,7 +168,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #f9c2da; border-c
 /* Login */
 .login-page {
     display: flex; align-items: center; justify-content: center; min-height: 100vh;
-    background: linear-gradient(135deg, #fce4ef 0%, #e3f4fb 100%);
+    background: linear-gradient(135deg, #bff0e4 0%, #8fe3d2 100%);
 }
 .login-box {
     background: #fff; padding: 34px 30px; border-radius: 14px; width: 340px;
