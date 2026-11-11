@@ -348,7 +348,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
     <?php endforeach; ?>
 <?php endforeach; ?>
 
-<!-- ============ LEMBAR REFLEKSI ORANG TUA ============ -->
+<!-- ============ LEMBAR REFLEKSI ORANG TUA (terpisah) ============ -->
 <section class="page">
     <div class="page-inner">
         <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
