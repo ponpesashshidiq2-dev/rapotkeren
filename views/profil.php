@@ -27,7 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         deleteUpload($backgroundRapot);
         $backgroundRapot = '';
     } elseif (!empty($_FILES['background_rapot']['name'])) {
-        $newBg = uploadFile('background_rapot', 'background');
+        // Background/bingkai rapot dicetak ke A4 → resolusi lebih tinggi (2400px), tetap dikompres ≤150KB
+        $newBg = uploadFile('background_rapot', 'background', ['jpg', 'jpeg', 'png', 'webp', 'gif'], ['max_dim' => 2400]);
         if ($newBg) {
             deleteUpload($backgroundRapot);
             $backgroundRapot = $newBg;

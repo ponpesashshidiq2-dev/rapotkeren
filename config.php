@@ -13,6 +13,8 @@ $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 $db->exec('PRAGMA foreign_keys = ON');
 
 require_once __DIR__ . '/schema.php';
+// Modul kompresi gambar otomatis (validasi + resize 1200px + quality 82%)
+require_once __DIR__ . '/src/image_compress.php';
 
 function e($s) {
     return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
@@ -33,25 +35,43 @@ function requireLogin() {
     }
 }
 
-function uploadFile($field, $subdir, $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'gif']) {
+/**
+ * Upload gambar dengan kompresi otomatis.
+ * - Validasi ketat: ekstensi whitelist + MIME nyata (bukan tebakan nama file)
+ *   + batas ukuran 5 MB agar server aman dari file sampah.
+ * - Kompresi: resize maksimum sisi terpanjang (default 1200 px) +
+ *   quality 82% (rentang 80–85) agar hasil tetap tajam, target ≤ 150 KB.
+ * - Transparansi PNG/WebP/GIF dijaga (output WebP ber-alpha).
+ *
+ * @param string $field    nama field di $_FILES
+ * @param string $subdir   subfolder di uploads/
+ * @param array  $allowedExt daftar ekstensi yang diizinkan
+ * @param array  $opts     opsi kompresi (max_dim, quality, max_bytes, format) → diteruskan ke imgCompress()
+ * @return string|null     path relatif 'uploads/...' atau null jika gagal/ditolak
+ */
+function uploadFile($field, $subdir, $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'], array $opts = []) {
+    // 1) Tolak bila tidak ada file atau kode error upload PHP (kecil, dsb.)
     if (empty($_FILES[$field]['name']) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK) {
         return null;
     }
     $orig = $_FILES[$field]['name'];
     $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+    // 2) Tolak ekstensi di luar daftar putih (sebelum proses apa pun)
     if (!in_array($ext, $allowedExt, true)) {
         return null;
     }
-    $name = uniqid('img_', true) . '.' . $ext;
+    // 3) Siapkan folder tujuan
     $dir = UPLOAD_DIR . '/' . $subdir;
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
     }
-    $dest = $dir . '/' . $name;
-    if (move_uploaded_file($_FILES[$field]['tmp_name'], $dest)) {
-        return 'uploads/' . $subdir . '/' . $name;
+    // 4) Validasi + resize + kompresi (menulis file final sendiri, ekstensi bisa berubah .webp)
+    $res = imgCompress($_FILES[$field]['tmp_name'], $orig, $dir, $opts);
+    if ($res === null) {
+        return null; // file ditolak (bukan gambar valid / terlalu besar / gagal proses)
     }
-    return null;
+    // 5) Kembalikan path relatif yang sama seperti format lama aplikasi
+    return 'uploads/' . $subdir . '/' . $res['file'];
 }
 
 function deleteUpload($relPath) {
