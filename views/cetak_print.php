@@ -447,6 +447,8 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             </div>
             <div class="ttd-col ttd-col-right">
                 <div class="ttd-role">Guru Kelas</div>
+                <div class="ttd-space"></div>
+                <div class="ttd-line"></div>
                 <div class="ttd-name-print"><?= e($profil['guru_kelompok'] ?: '') ?></div>
                 <div class="ttd-nip">NBM. <?= e($profil['nip_guru'] ?: '........................') ?></div>
             </div>
