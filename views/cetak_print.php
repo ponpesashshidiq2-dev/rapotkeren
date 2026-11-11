@@ -176,8 +176,8 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
     </div>
 </section>
 
-<!-- ============ 2. DATA PESERTA DIDIK ============ -->
-<section class="page">
+<!-- ============ 2. DATA PESERTA DIDIK (1 halaman A4) ============ -->
+<section class="page page-biodata">
     <div class="page-inner">
         <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
 
@@ -258,6 +258,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 
 <?php if ($bagian === 'semua' || $bagian === 'isi'): ?>
 <!-- ============ HALAMAN CAPAIAN PEMBELAJARAN (CP) ============ -->
+<?php $isiCounter = 0; ?>
 <?php foreach ($cps as $cp): ?>
     <?php
     $subs = $db->prepare('SELECT * FROM sub_cp WHERE cp_id = ? ORDER BY urutan, id');
@@ -290,9 +291,11 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
     }
     ?>
 
-    <?php foreach ($pages as $pInfo): ?>
+    <?php foreach ($pages as $pInfo): $isiCounter++; $isFirstIsi = ($isiCounter === 1); ?>
     <section class="page">
         <div class="page-inner">
+            <?php if ($isFirstIsi): ?>
+            <!-- Format header + meta hanya di halaman pertama isi raport -->
             <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
 
             <table class="meta">
@@ -305,6 +308,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                     <td class="m-lbl">Tahun Ajaran</td><td class="m-col">:</td><td class="m-val"><?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)</td>
                 </tr>
             </table>
+            <?php endif; ?>
 
             <h1 class="cp-title">✿ <?= e(strtoupper($cp['nama'])) ?><?= e($pInfo['title_suffix'] ?? '') ?> ✿</h1>
 
@@ -356,8 +360,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 <!-- ============ LEMBAR REFLEKSI ORANG TUA (terpisah) ============ -->
 <section class="page">
     <div class="page-inner">
-        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
-
         <div class="meta-simple">
             Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong>
             &nbsp;&nbsp;|&nbsp;&nbsp; Kelompok: <?= e($anak['kelompok'] ?: '-') ?>
@@ -394,8 +396,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 <!-- ============ LEMBAR PERTUMBUHAN, KEHADIRAN & PENGESAHAN ============ -->
 <section class="page">
     <div class="page-inner">
-        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
-
         <div class="meta-simple">
             Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong>
             &nbsp;&nbsp;|&nbsp;&nbsp; Kelompok: <?= e($anak['kelompok'] ?: '-') ?>
@@ -471,4 +471,47 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 <?php endif; ?>
 
 </body>
+<script>
+// Auto-scale: setiap lembar dipaksa pas 1 halaman A4.
+// Jika konten melebihi tinggi halaman, isi di-scale otomatis (transform) agar tidak meluber ke halaman berikutnya.
+(function () {
+    var MM = 96 / 25.4;                 // px per mm (CSS)
+    var TARGET = 277 * MM - 2;          // tinggi maks page-inner (297mm - padding 10mm x2), sisa 2px jaga2
+
+    function fitPages() {
+        var pages = document.querySelectorAll('.page');
+        for (var i = 0; i < pages.length; i++) {
+            var page = pages[i];
+            var inner = page.querySelector('.page-inner');
+            if (!inner) continue;
+
+            // Reset dulu agar pengukuran selalu tinggi asli (transform tidak memengaruhi offsetHeight)
+            inner.style.transform = '';
+            inner.style.width = '';
+            page.style.height = '';
+
+            var h = inner.offsetHeight;
+            if (h > TARGET) {
+                var scale = TARGET / h;
+                inner.style.transformOrigin = 'top left';
+                inner.style.transform = 'scale(' + scale + ')';
+                inner.style.width = (100 / scale) + '%'; // kompensasi lebar agar pas setelah di-scale
+                page.style.height = '297mm';             // kunci tinggi halaman = 1 A4
+                page.style.overflow = 'hidden';
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fitPages);
+    } else {
+        fitPages();
+    }
+    window.addEventListener('load', fitPages);        // setelah gambar/font selesai dimuat
+    window.addEventListener('beforeprint', fitPages); // jaring pengaman sebelum cetak
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(fitPages);
+    }
+})();
+</script>
 </html>

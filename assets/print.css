@@ -122,6 +122,22 @@ table.identitas .colon { width: 4mm; }
 .sign-space { height: 18mm; }
 .sign-name { font-size: 13px; font-weight: 700; text-decoration: underline; }
 
+/* ===== Biodata siswa — dipadatkan agar pas 1 halaman A4 ===== */
+.page-biodata .page-inner { padding: 9mm 11mm 11mm; }
+.page-biodata .head-bar { font-size: 14pt; margin-bottom: 3.5mm; }
+.page-biodata .cover-title { font-size: 18px; margin: 3.5mm 0 1.5mm; }
+.page-biodata .cover-sub { font-size: 14px; margin-bottom: 4mm; }
+.page-biodata .band { padding: 1.8mm; font-size: 12.5px; margin: 2.5mm 0 1.5mm; }
+.page-biodata table.identitas td { padding: 0.8mm 2mm; font-size: 11.5px; }
+.page-biodata table.identitas .lbl { width: 48mm; }
+.page-biodata .sign-row { margin-top: 3mm; }
+.page-biodata .photo-34 { width: 30mm; height: 40mm; }
+.page-biodata .sign-space { height: 11mm; }
+.page-biodata .sign-date { font-size: 12px; margin-bottom: 1mm; }
+.page-biodata .sign-label { font-size: 12.5px; }
+.page-biodata .sign-name { font-size: 12.5px; }
+.page-biodata .pemisah { margin-top: 3mm; }
+
 /* Halaman CP */
 .meta { width: 100%; border-collapse: collapse; margin-bottom: 3mm; table-layout: fixed; }
 .meta td { font-size: 12.5px; padding: 1.4mm 0; font-weight: 700; color: #0b3821; vertical-align: top; }
@@ -272,4 +288,6 @@ table.growth-single td:nth-child(3) { padding-left: 6mm; }
     .no-print { display: none !important; }
     .page { margin: 0; box-shadow: none; width: auto; min-height: auto; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
+    /* Biodata dijamin maksimal 1 lembar A4 */
+    .page-biodata { height: 297mm; max-height: 297mm; overflow: hidden; }
 }
