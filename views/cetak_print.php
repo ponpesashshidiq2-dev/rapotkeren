@@ -440,25 +440,22 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 
         <div class="ttd-block">
             <div class="ttd-col">
+                <div class="ttd-role">Orang Tua/Wali</div>
                 <div class="ttd-space"></div>
-                <div class="ttd-line"></div>
-                <div class="ttd-role">Orang Tua / Wali</div>
-                <div class="ttd-name-print"><?= e($anak['nama_ayah'] ?: ($anak['nama_wali'] ?: ($anak['nama_ibu'] ?: ''))) ?></div>
+                <div class="ttd-line-dotted">(<?= str_repeat('.', 28) ?>)</div>
             </div>
             <div class="ttd-col ttd-col-right">
-                <div class="ttd-space"></div>
-                <div class="ttd-line"></div>
                 <div class="ttd-role">Guru Kelas</div>
-                <div class="ttd-name-print"><?= e($profil['guru_kelompok'] ?: '') ?></div>
+                <div class="ttd-space"></div>
+                <div class="ttd-name-print ttd-name-boxed"><strong><?= e($profil['guru_kelompok'] ?: '') ?></strong></div>
                 <div class="ttd-nip">NBM. <?= e($profil['nip_guru'] ?: '........................') ?></div>
             </div>
         </div>
 
         <div class="ttd-center">
-            <div>Mengetahui,</div>
+            <div>Mengetahui</div>
             <div>Kepala <?= e($profil['nama_sekolah'] ?: 'Satuan PAUD / TK') ?></div>
             <div class="ttd-space-lg"></div>
-            <div class="ttd-line ttd-line-center"></div>
             <div class="ttd-name-print"><strong><?= e($profil['kepala_sekolah'] ?: '') ?></strong></div>
             <div class="ttd-nip">NIP/NBM. <?= e($profil['nip_kepala'] ?: '........................') ?></div>
         </div>
