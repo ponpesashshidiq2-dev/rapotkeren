@@ -238,7 +238,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 <?php endif; ?>
             </div>
             <div class="sign-right">
-                <div class="sign-date"><?= e($profil['kabupaten'] ?: ($profil['desa'] ?: '..........................')) ?>, ..................................</div>
+                <div class="sign-date"><?= e($profil['kota'] ?: $profil['kabupaten'] ?: ($profil['desa'] ?: '..........................')) ?>, <?= !empty($profil['tanggal_raport']) ? tanggalIndo($profil['tanggal_raport']) : '....................................' ?></div>
                 <div class="sign-label">Kepala Satuan PAUD / TK</div>
                 <div class="sign-space"></div>
                 <div class="sign-name"><strong>( <?= e($profil['kepala_sekolah'] ?: '................................................') ?> )</strong></div>
@@ -435,7 +435,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
         </table>
 
         <div class="ttd-date-row">
-            <?= e($profil['kabupaten'] ?: $profil['desa'] ?: '..........................') ?>, <?= tanggalIndo() ?>
+            <?= e($profil['kota'] ?: $profil['kabupaten'] ?: $profil['desa'] ?: '..........................') ?>, <?= !empty($profil['tanggal_raport']) ? tanggalIndo($profil['tanggal_raport']) : '....................................' ?>
         </div>
 
         <div class="ttd-block">
@@ -446,8 +446,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 <div class="ttd-name-print"><?= e($anak['nama_ayah'] ?: ($anak['nama_wali'] ?: ($anak['nama_ibu'] ?: ''))) ?></div>
             </div>
             <div class="ttd-col ttd-col-right">
-                <div class="ttd-space"></div>
-                <div class="ttd-line"></div>
                 <div class="ttd-role">Guru Kelas</div>
                 <div class="ttd-name-print"><?= e($profil['guru_kelompok'] ?: '') ?></div>
                 <div class="ttd-nip">NBM. <?= e($profil['nip_guru'] ?: '........................') ?></div>

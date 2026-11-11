@@ -39,6 +39,10 @@ try {
     $db->exec("ALTER TABLE profil ADD COLUMN nip_guru TEXT DEFAULT ''");
 } catch (Exception $e) {}
 try {
+    $db->exec("ALTER TABLE profil ADD COLUMN kota TEXT DEFAULT ''");
+    $db->exec("ALTER TABLE profil ADD COLUMN tanggal_raport TEXT DEFAULT ''");
+} catch (Exception $e) {}
+try {
     $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q1 TEXT DEFAULT ''");
     $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q2 TEXT DEFAULT ''");
     $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q3 TEXT DEFAULT ''");

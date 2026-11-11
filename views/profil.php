@@ -4,7 +4,8 @@ require_once __DIR__ . '/layout.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fields = ['npsn','nama_sekolah','status','jenjang','alamat','rt_rw','desa','kecamatan',
                'kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
-               'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru'];
+               'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru',
+               'kota','tanggal_raport'];
     $curProfil = getProfil($db);
     $logo = $curProfil['logo'] ?? '';
     $backgroundRapot = $curProfil['background_rapot'] ?? '';
@@ -246,6 +247,14 @@ page_header('Profil Lembaga', 'profil');
             <div class="form-group">
                 <label for="footer">Teks Footer Cetak</label>
                 <input type="text" id="footer" name="footer" value="<?= e($profil['footer']) ?>" placeholder="Misal: SAHABAT GURU">
+            </div>
+            <div class="form-group">
+                <label for="kota">Kota (untuk tanggal cetak raport)</label>
+                <input type="text" id="kota" name="kota" value="<?= e($profil['kota'] ?? '') ?>" placeholder="mis. Ngawan">
+            </div>
+            <div class="form-group">
+                <label for="tanggal_raport">Tanggal Raport</label>
+                <input type="date" id="tanggal_raport" name="tanggal_raport" value="<?= e($profil['tanggal_raport'] ?? '') ?>">
             </div>
             <div class="form-group col-span-2">
                 <label for="kepala_sekolah">Nama Kepala Sekolah (Dicantumkan di Tanda Tangan)</label>
