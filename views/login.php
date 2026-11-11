@@ -32,12 +32,6 @@ $logoSekolah = !empty($profil['logo']) && file_exists(BASE_DIR . '/' . $profil['
 
     <p class="login-eyebrow">Pendidikan Anak Usia Dini</p>
     <h1>Laporan Perkembangan<br><em>Anak Didik</em></h1>
-    <?php if ($namaSekolah): ?>
-        <p class="login-school"><?= e($namaSekolah) ?></p>
-    <?php else: ?>
-        <p class="login-school">Raport Digital PAUD &amp; TK</p>
-    <?php endif; ?>
-
     <?php if ($error): ?>
         <div class="alert alert-error"><?= e($error) ?></div>
     <?php endif; ?>

@@ -131,6 +131,14 @@ $st->execute([$anakId]);
 foreach ($st->fetchAll() as $r) $manual[(int)$r['sub_cp_id']] = $r['teks'];
 
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
+// Sembunyikan CP AIK bila diaktifkan di Profil
+$hideAik = !empty(getProfil($db)['hide_aik']);
+if ($hideAik) {
+    $cps = array_values(array_filter($cps, function ($cp) {
+        $n = strtolower($cp['nama']);
+        return !(strpos($n, 'al islam') !== false || strpos($n, 'kemuhammadiyahan') !== false);
+    }));
+}
 $splitIds = [];
 foreach ($cps as $c) {
     $n = strtolower($c['nama']);

@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fields = ['npsn','nama_sekolah','status','jenjang','alamat','rt_rw','desa','kecamatan',
                'kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
                'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru',
-               'kota','tanggal_raport'];
+               'kota','tanggal_raport','nss'];
     $curProfil = getProfil($db, $myId);
     $logo = $curProfil['logo'] ?? '';
     $backgroundRapot = $curProfil['background_rapot'] ?? '';
@@ -52,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sql .= ' WHERE user_id = ?';
     $params[] = $myId;
     $db->prepare($sql)->execute($params);
+    $db->prepare('UPDATE profil SET hide_aik = ? WHERE user_id = ?')
+       ->execute([!empty($_POST['hide_aik']) ? 1 : 0, $myId]);
     flash('Profil lembaga dan konfigurasi rapot berhasil diperbarui.');
     redirect('index.php?route=profil');
 }
@@ -62,6 +64,7 @@ $profil = array_merge(array_fill_keys([
     'logo','background_rapot','npsn','nama_sekolah','status','jenjang','alamat','rt_rw',
     'desa','kecamatan','kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
     'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru','kota','tanggal_raport',
+    'nss','hide_aik',
 ], ''), $profil);
 page_header('Profil Lembaga', 'profil');
 ?>
@@ -118,6 +121,10 @@ page_header('Profil Lembaga', 'profil');
             <div class="form-group">
                 <label for="npsn">NPSN (Nomor Pokok Sekolah Nasional)</label>
                 <input type="text" id="npsn" name="npsn" value="<?= e($profil['npsn']) ?>" placeholder="Misal: 20108899">
+            </div>
+            <div class="form-group">
+                <label for="nss">NSS (Nomor Statistik Satuan)</label>
+                <input type="text" id="nss" name="nss" value="<?= e($profil['nss'] ?? '') ?>" placeholder="Misal: 20408057">
             </div>
             <div class="form-group">
                 <label for="nama_sekolah">Nama Sekolah / Satuan PAUD</label>
@@ -271,6 +278,14 @@ page_header('Profil Lembaga', 'profil');
             <div class="form-group">
                 <label for="tanggal_raport">Tanggal Raport</label>
                 <input type="date" id="tanggal_raport" name="tanggal_raport" value="<?= e($profil['tanggal_raport'] ?? '') ?>">
+            </div>
+            <div class="form-group col-span-3">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
+                    <input type="checkbox" name="hide_aik" value="1" <?= !empty($profil['hide_aik']) ? 'checked' : '' ?>
+                        style="width:18px; height:18px; accent-color:var(--hijau-daun);">
+                    Sembunyikan CP AIK (AL ISLAM, KE'AISYIYAHAN DAN KEMUHAMMADIYAHAN)
+                </label>
+                <p class="muted" style="margin:4px 0 0; font-size:12.5px;">Jika dicentang, CP AIK tidak tampil di menu Penilaian dan tidak ikut dicetak pada raport.</p>
             </div>
             <div class="form-group col-span-2">
                 <label for="kepala_sekolah">Nama Kepala Sekolah (Dicantumkan di Tanda Tangan)</label>

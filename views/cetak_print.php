@@ -18,6 +18,14 @@ if (anakAccess($db, $anakId) === null) {
 
 $profil = getProfil($db);
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
+// Opsi profil: sembunyikan CP AIK dari cetak (juga berlaku di menu Penilaian)
+$hideAik = !empty($profil['hide_aik']);
+if ($hideAik) {
+    $cps = array_values(array_filter($cps, function ($cp) {
+        $n = strtolower($cp['nama']);
+        return !(strpos($n, 'al islam') !== false || strpos($n, 'kemuhammadiyahan') !== false);
+    }));
+}
 
 // Refleksi global (pertanyaan sama untuk semua anak) + pertumbuhan/kehadiran per anak
 $refleksi = [];
@@ -130,18 +138,13 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 </div>
 
 <?php if ($bagian === 'semua' || $bagian === 'cover_biodata'): ?>
-<!-- ============ 1. COVER / IDENTITAS SATUAN PENDIDIKAN ============ -->
-<section class="page">
+<!-- ============ 1. COVER (gaya resmi: 1 logo + identitas + nama anak) ============ -->
+<section class="page page-cover-official">
     <div class="page-inner">
-        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
-
-        <h1 class="cover-title">✿ DATA SATUAN PENDIDIKAN ✿</h1>
-        <h2 class="cover-sub">IDENTITAS SEKOLAH</h2>
-
-        <div class="logo-wrap">
-            <?php 
-            $coverLogo = !empty($profil['logo']) && file_exists(BASE_DIR . '/' . $profil['logo']) 
-                ? $profil['logo'] 
+        <div class="logo-wrap logo-wrap-official">
+            <?php
+            $coverLogo = !empty($profil['logo']) && file_exists(BASE_DIR . '/' . $profil['logo'])
+                ? $profil['logo']
                 : (file_exists(BASE_DIR . '/assets/logo.png') ? 'assets/logo.png' : '');
             ?>
             <?php if ($coverLogo): ?>
@@ -151,28 +154,35 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             <?php endif; ?>
         </div>
 
-        <table class="identitas">
+        <div class="official-kicker">LAPORAN</div>
+        <div class="official-title">PERKEMBANGAN ANAK DIDIK</div>
+        <div class="official-school">
+            <?= e(strtoupper(($profil['jenjang'] ? $profil['jenjang'] . ' ' : '') . ($profil['nama_sekolah'] ?: '..........................'))) ?>
+        </div>
+
+        <table class="identitas identitas-official">
             <?php
             $rows = [
-                'Nama Satuan PAUD' => $profil['nama_sekolah'] ?: '-',
+                'Nama TK' => $profil['nama_sekolah'] ?: '-',
+                'NSS' => $profil['nss'] ?? '',
                 'NPSN' => $profil['npsn'] ?: '-',
-                'Alamat' => $profil['alamat'] ?: '-',
-                'RT / RW' => $profil['rt_rw'] ?: '-',
-                'Desa / Kelurahan' => $profil['desa'] ?: '-',
+                'Alamat' => trim(($profil['alamat'] ?? '') . (($profil['rt_rw'] ?? '') !== '' ? ', RT/RW ' . $profil['rt_rw'] : ''), ', ') ?: '-',
+                'Desa/Kelurahan' => $profil['desa'] ?: '-',
                 'Kecamatan' => $profil['kecamatan'] ?: '-',
-                'Kabupaten / Kota' => $profil['kabupaten'] ?: '-',
-                'Provinsi' => $profil['provinsi'] ?: '-',
-                'Kode Pos' => $profil['kode_pos'] ?: '-',
-                'Telepon / WhatsApp' => $profil['telp'] ?: '-',
-                'Email' => $profil['email'] ?: '-',
+                'Kabupaten' => $profil['kabupaten'] ?: '-',
+                'Propinsi' => $profil['provinsi'] ?: '-',
             ];
             foreach ($rows as $label => $val): ?>
-            <tr><td class="lbl"><?= e($label) ?></td><td class="colon">:</td><td><?= e($val) ?></td></tr>
+            <tr><td class="lbl"><?= e($label) ?></td><td class="colon">:</td><td><?= e($val !== '' ? $val : '-') ?></td></tr>
             <?php endforeach; ?>
         </table>
 
-        <div class="pemisah">- - - - - - Pemisah - - - - - -</div>
-        <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
+        <div class="official-child-label">Nama Anak Didik :</div>
+        <div class="official-child-name"><?= e($anak['nama_lengkap']) ?></div>
+
+        <div class="official-footer">
+            <?= nl2br(e($profil['footer'] ?: 'SAHABAT GURU')) ?>
+        </div>
     </div>
 </section>
 

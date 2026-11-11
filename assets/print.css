@@ -91,6 +91,46 @@ body {
     color: #9ccfe8; font-weight: 700;
 }
 
+/* Cover resmi (gaya: 1 logo + identitas + nama anak) */
+.page-cover-official .page-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: 14mm;
+}
+.logo-wrap-official { margin-bottom: 6mm; }
+.logo-wrap-official img { max-width: 110px; max-height: 110px; }
+.official-kicker {
+    font-size: 15px; font-weight: 700; letter-spacing: 2px;
+    color: #0b3821; margin-top: 2mm;
+}
+.official-title {
+    font-size: 17px; font-weight: 800; color: #0b3821;
+    letter-spacing: .5px; margin-top: 1mm;
+}
+.official-school {
+    font-size: 14.5px; font-weight: 700; color: #187a46;
+    margin-top: 3mm; max-width: 150mm; line-height: 1.4;
+}
+.identitas-official {
+    margin-top: 8mm; text-align: left; max-width: 145mm;
+}
+.identitas-official .lbl { width: 42mm; }
+.official-child-label {
+    margin-top: 10mm; font-size: 13.5px; font-weight: 700; color: #0b3821;
+    text-align: left; width: 145mm;
+}
+.official-child-name {
+    font-size: 20px; font-weight: 800; color: #0b3821;
+    letter-spacing: .5px; margin-top: 3mm; text-transform: uppercase;
+}
+.official-footer {
+    position: absolute; left: 0; right: 0; bottom: 12mm;
+    font-size: 12px; font-weight: 700; color: #0b3821;
+    line-height: 1.55; text-align: center;
+}
+
 .band {
     text-align: center; padding: 2.8mm; font-size: 13.5px; font-weight: 700;
     margin: 5mm 0 3mm; letter-spacing: .3px;
