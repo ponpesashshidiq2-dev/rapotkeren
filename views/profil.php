@@ -4,7 +4,7 @@ require_once __DIR__ . '/layout.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fields = ['npsn','nama_sekolah','status','jenjang','alamat','rt_rw','desa','kecamatan',
                'kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
-               'guru_kelompok','tahun_ajaran','semester','footer'];
+               'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru'];
     $curProfil = getProfil($db);
     $logo = $curProfil['logo'] ?? '';
     $backgroundRapot = $curProfil['background_rapot'] ?? '';
@@ -252,8 +252,16 @@ page_header('Profil Lembaga', 'profil');
                 <input type="text" id="kepala_sekolah" name="kepala_sekolah" value="<?= e($profil['kepala_sekolah']) ?>" placeholder="Nama lengkap beserta gelar (mis. Dra. Hj. Siti Aminah, M.Pd)">
             </div>
             <div class="form-group">
+                <label for="nip_kepala">NIP / NBM Kepala Sekolah</label>
+                <input type="text" id="nip_kepala" name="nip_kepala" value="<?= e($profil['nip_kepala'] ?? '') ?>" placeholder="mis. 19700101 199403 1 001">
+            </div>
+            <div class="form-group">
                 <label for="guru_kelompok">Nama Guru Kelompok (Dicantumkan di Tanda Tangan)</label>
                 <input type="text" id="guru_kelompok" name="guru_kelompok" value="<?= e($profil['guru_kelompok']) ?>" placeholder="Nama lengkap guru kelas / wali kelompok">
+            </div>
+            <div class="form-group">
+                <label for="nip_guru">NIP / NBM Guru Kelompok</label>
+                <input type="text" id="nip_guru" name="nip_guru" value="<?= e($profil['nip_guru'] ?? '') ?>" placeholder="mis. 1332715">
             </div>
         </div>
     </div>

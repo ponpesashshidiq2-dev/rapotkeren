@@ -7,7 +7,10 @@ $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 
 function isSplitCpName(string $nama): bool {
     $n = strtolower($nama);
-    return (strpos($n, 'jati diri') !== false) || (strpos($n, 'literasi') !== false);
+    return (strpos($n, 'jati diri') !== false)
+        || (strpos($n, 'literasi') !== false)
+        || (strpos($n, 'al islam') !== false)
+        || (strpos($n, 'kemuhammadiyahan') !== false);
 }
 
 // ---- Simpan / hapus foto ----

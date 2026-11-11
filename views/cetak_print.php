@@ -14,6 +14,12 @@ if (!$anak) redirect('index.php?route=cetak');
 $profil = getProfil($db);
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 
+// Refleksi / pertumbuhan / kehadiran
+$refleksi = [];
+$st = $db->prepare('SELECT * FROM refleksi WHERE anak_id = ?');
+$st->execute([$anakId]);
+if ($r = $st->fetch()) $refleksi = $r;
+
 // skor capaian (1-4)
 $skors = [];
 $st = $db->prepare('SELECT capaian_id, skor FROM penilaian WHERE anak_id = ?');
@@ -43,15 +49,29 @@ if (!function_exists('usia')) {
 
 require_once BASE_DIR . '/src/deskripsi.php';
 
+// Tanggal Indonesia: "Ngawan, 26 Juni 2026"
+function tanggalIndo($tgl = null) {
+    $bulan = [1=>'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    $d = $tgl ? new DateTime($tgl) : new DateTime();
+    return $d->format('j') . ' ' . $bulan[(int)$d->format('n')] . ' ' . $d->format('Y');
+}
+
+if (!function_exists('isAikCp')) {
+    function isAikCp($namaCp) {
+        $n = strtolower($namaCp);
+        return (strpos($n, 'al islam') !== false) || (strpos($n, 'kemuhammadiyahan') !== false);
+    }
+}
+
 if (!function_exists('isSplitCp')) {
     function isSplitCp($namaCp) {
         $n = strtolower($namaCp);
-        return (strpos($n, 'jati diri') !== false) || (strpos($n, 'literasi') !== false);
+        return (strpos($n, 'jati diri') !== false) || (strpos($n, 'literasi') !== false) || isAikCp($namaCp);
     }
 }
 
 // Hitung jumlah halaman
-$totalIsiPages = 1; // lembar pengesahan
+$totalIsiPages = 2; // refleksi + lembar pertumbuhan/pengesahan
 foreach ($cps as $cp) {
     $totalIsiPages += isSplitCp($cp['nama']) ? 2 : 1;
 }
@@ -237,13 +257,23 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
     foreach ($st->fetchAll() as $r) $fotos[(int)$r['urutan']] = $r;
 
     $split = isSplitCp($cp['nama']);
-    // Jika split: 2 halaman, masing-masing tetap 2 foto (lembar 1: foto 1&2, lembar 2: foto 3&4)
-    $pages = $split ? [
-        ['title_suffix' => ' (BAGIAN 1)', 'subs' => array_slice($subs, 0, 3), 'foto_start' => 1],
-        ['title_suffix' => ' (BAGIAN 2)', 'subs' => array_slice($subs, 3),    'foto_start' => 3],
-    ] : [
-        ['title_suffix' => '', 'subs' => $subs, 'foto_start' => 1],
-    ];
+    if ($split && isAikCp($cp['nama'])) {
+        // AIK: 2 lembar — Lembar 1 AL Islam & Al-Qur'an, Lembar 2 Ke'Aisyiyahan & Kemuhammadiyahan
+        $pages = [
+            ['title_override' => 'AL ISLAM DAN AL-QUR\'AN',           'subs' => array_slice($subs, 0, 2), 'foto_start' => 1],
+            ['title_override' => 'KE\'AISYIYAHAN DAN KEMUHAMMADIYAHAN', 'subs' => array_slice($subs, 2),    'foto_start' => 3],
+        ];
+    } elseif ($split) {
+        // Jati Diri / Literasi: 2 halaman, masing-masing tetap 2 foto (lembar 1: foto 1&2, lembar 2: foto 3&4)
+        $pages = [
+            ['title_suffix' => ' (BAGIAN 1)', 'subs' => array_slice($subs, 0, 3), 'foto_start' => 1],
+            ['title_suffix' => ' (BAGIAN 2)', 'subs' => array_slice($subs, 3),    'foto_start' => 3],
+        ];
+    } else {
+        $pages = [
+            ['title_suffix' => '', 'subs' => $subs, 'foto_start' => 1],
+        ];
+    }
     ?>
 
     <?php foreach ($pages as $pInfo): ?>
@@ -262,7 +292,11 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 </tr>
             </table>
 
-            <h1 class="cp-title">✿ <?= e(strtoupper($cp['nama'])) ?><?= e($pInfo['title_suffix']) ?> ✿</h1>
+            <?php if (!empty($pInfo['title_override'])): ?>
+                <h1 class="cp-title">✿ <?= e($pInfo['title_override']) ?> ✿</h1>
+            <?php else: ?>
+                <h1 class="cp-title">✿ <?= e(strtoupper($cp['nama'])) ?><?= e($pInfo['title_suffix'] ?? '') ?> ✿</h1>
+            <?php endif; ?>
 
             <?php
             $color = 0;
@@ -309,56 +343,106 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
     <?php endforeach; ?>
 <?php endforeach; ?>
 
-<!-- ============ LEMBAR PENGESAHAN ============ -->
+<!-- ============ LEMBAR REFLEKSI ORANG TUA ============ -->
 <section class="page">
     <div class="page-inner">
         <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
 
-        <h1 class="cover-title">✿ LEMBAR PENGESAHAN ✿</h1>
-        <h2 class="cover-sub">LAPORAN PERKEMBANGAN ANAK DIDIK</h2>
+        <div class="meta-simple">
+            Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong>
+            &nbsp;&nbsp;|&nbsp;&nbsp; Kelompok: <?= e($anak['kelompok'] ?: '-') ?>
+            &nbsp;&nbsp;|&nbsp;&nbsp; Tahun Ajaran: <?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)
+        </div>
 
-        <table class="pengesahan-meta">
-            <tr>
-                <td>Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong></td>
-                <td>Kelompok: <?= e($anak['kelompok'] ?: '..............................') ?></td>
-            </tr>
-            <tr>
-                <td>Tahun Ajaran: <?= e($profil['tahun_ajaran'] ?? '..............................') ?></td>
-                <td>Semester: <?= e($profil['semester'] ?? '................') ?></td>
-            </tr>
-        </table>
-
-        <p class="pengesahan-text">
-            Laporan perkembangan ini telah dibaca dan diketahui oleh orang tua/wali serta pihak
-            satuan pendidikan.
-        </p>
-
-        <p class="pengesahan-text">
-            Tempat, tanggal: <?= e($profil['kabupaten'] ?: ($profil['desa'] ?: '................................................')) ?>, ....................................
-        </p>
-
-        <div class="ttd-row">
-            <div class="ttd">
-                <div class="ttd-role">Orang Tua / Wali</div>
-                <div class="ttd-space"></div>
-                <div class="ttd-name"><strong>( <?= e($anak['nama_ayah'] ?: ($anak['nama_wali'] ?: ($anak['nama_ibu'] ?: '................................................'))) ?> )</strong></div>
+        <div class="refleksi-box">
+            <div class="refleksi-title">REFLEKSI ORANG TUA</div>
+            <?php
+            $qs = [
+                1 => trim($refleksi['q1'] ?? '') ?: 'Perubahan positif apa yang sudah ada pada Ananda selama semester ini?',
+                2 => trim($refleksi['q2'] ?? '') ?: 'Pendampingan/dukungan apa yang sudah Bapak/Ibu lakukan kepada Ananda selama semester ini?',
+                3 => trim($refleksi['q3'] ?? '') ?: 'Potensi apa yang ingin Bapak/Ibu maksimalkan dari Ananda?',
+            ];
+            foreach ($qs as $i => $q): ?>
+            <div class="refleksi-q">
+                <div class="refleksi-qtext"><?= $i ?>. <?= e($q) ?></div>
+                <div class="refleksi-lines">
+                    <span></span><span></span><span></span>
+                </div>
             </div>
-            <div class="ttd">
-                <div class="ttd-role">Guru Kelompok / Wali Kelas</div>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
+    </div>
+</section>
+
+<!-- ============ LEMBAR PERTUMBUHAN, KEHADIRAN & PENGESAHAN ============ -->
+<section class="page">
+    <div class="page-inner">
+        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
+
+        <div class="meta-simple">
+            Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong>
+            &nbsp;&nbsp;|&nbsp;&nbsp; Kelompok: <?= e($anak['kelompok'] ?: '-') ?>
+            &nbsp;&nbsp;|&nbsp;&nbsp; Tahun Ajaran: <?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)
+        </div>
+
+        <div class="growth-title">PERTUMBUHAN DAN KEHADIRAN ANAK</div>
+
+        <div class="growth-tables">
+            <table class="growth-tbl">
+                <thead><tr><th colspan="2">Pertumbuhan</th></tr></thead>
+                <tbody>
+                    <tr><td>Berat Badan</td><td><?= e($refleksi['berat_badan'] ?? '') !== '' ? e($refleksi['berat_badan']) : '................' ?></td></tr>
+                    <tr><td>Tinggi Badan</td><td><?= e($refleksi['tinggi_badan'] ?? '') !== '' ? e($refleksi['tinggi_badan']) : '................' ?></td></tr>
+                    <tr><td>Lingkar Kepala</td><td><?= e($refleksi['lingkar_kepala'] ?? '') !== '' ? e($refleksi['lingkar_kepala']) : '................' ?></td></tr>
+                    <tr><td>Lingkar Lengan</td><td><?= e($refleksi['lingkar_lengan'] ?? '') !== '' ? e($refleksi['lingkar_lengan']) : '................' ?></td></tr>
+                </tbody>
+            </table>
+            <table class="growth-tbl">
+                <thead><tr><th colspan="2">Kehadiran Anak</th></tr></thead>
+                <tbody>
+                    <tr><td>Sakit</td><td><?= isset($refleksi['sakit']) ? (int)$refleksi['sakit'] : 0 ?></td></tr>
+                    <tr><td>Izin</td><td><?= isset($refleksi['izin']) ? (int)$refleksi['izin'] : 0 ?></td></tr>
+                    <tr><td>Tanpa Keterangan</td><td><?= isset($refleksi['tanpa_keterangan']) ? (int)$refleksi['tanpa_keterangan'] : 0 ?></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ttd-block">
+            <div class="ttd-col">
                 <div class="ttd-space"></div>
-                <div class="ttd-name"><strong>( <?= e($profil['guru_kelompok'] ?: '................................................') ?> )</strong></div>
+                <div class="ttd-line"></div>
+                <div class="ttd-role">Orang Tua / Wali</div>
+                <div class="ttd-name-print"><?= e($anak['nama_ayah'] ?: ($anak['nama_wali'] ?: ($anak['nama_ibu'] ?: ''))) ?></div>
+            </div>
+            <div class="ttd-col ttd-col-right">
+                <div class="ttd-date"><?= e(($profil['desa'] ?: $profil['kabupaten'] ?: '..........................')) ?>, <?= tanggalIndo() ?></div>
+                <div class="ttd-space"></div>
+                <div class="ttd-line"></div>
+                <div class="ttd-role">Guru Kelas</div>
+                <div class="ttd-name-print"><?= e($profil['guru_kelompok'] ?: '') ?></div>
+                <?php if (!empty($profil['nip_guru'])): ?>
+                <div class="ttd-nip">NBM. <?= e($profil['nip_guru']) ?></div>
+                <?php endif; ?>
             </div>
         </div>
 
         <div class="ttd-center">
             <div>Mengetahui,</div>
-            <div>Kepala Satuan PAUD / TK</div>
+            <div>Kepala <?= e($profil['nama_sekolah'] ?: 'Satuan PAUD / TK') ?></div>
             <div class="ttd-space-lg"></div>
-            <div class="ttd-name"><strong>( <?= e($profil['kepala_sekolah'] ?: '................................................') ?> )</strong></div>
+            <div class="ttd-line ttd-line-center"></div>
+            <div class="ttd-name-print"><strong><?= e($profil['kepala_sekolah'] ?: '') ?></strong></div>
+            <?php if (!empty($profil['nip_kepala'])): ?>
+            <div class="ttd-nip">NIP/NBM. <?= e($profil['nip_kepala']) ?></div>
+            <?php else: ?>
+            <div class="ttd-nip">NIP/NBM: ................................</div>
+            <?php endif; ?>
         </div>
 
         <p class="catatan">
-            <em>Catatan: Foto pada bagian dokumentasi merupakan kegiatan nyata anak selama proses pembelajaran. Guru dapat mengunggah foto melalui menu Foto Kegiatan.</em>
+            <em>Catatan: Foto pada bagian dokumentasi merupakan kegiatan nyata anak selama proses pembelajaran. Guru dapat mengunggah foto melalui menu Foto Kegiatan. Refleksi orang tua diisi pada lembar terpisah.</em>
         </p>
 
         <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>

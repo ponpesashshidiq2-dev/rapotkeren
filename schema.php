@@ -34,6 +34,10 @@ $db->exec("CREATE TABLE IF NOT EXISTS profil (
 try {
     $db->exec("ALTER TABLE profil ADD COLUMN background_rapot TEXT DEFAULT ''");
 } catch (Exception $e) {}
+try {
+    $db->exec("ALTER TABLE profil ADD COLUMN nip_kepala TEXT DEFAULT ''");
+    $db->exec("ALTER TABLE profil ADD COLUMN nip_guru TEXT DEFAULT ''");
+} catch (Exception $e) {}
 
 $db->exec("CREATE TABLE IF NOT EXISTS anak (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,6 +129,75 @@ $db->exec("CREATE TABLE IF NOT EXISTS foto (
     FOREIGN KEY (cp_id) REFERENCES cp(id) ON DELETE CASCADE
 )");
 
+// Refleksi orang tua + pertumbuhan & kehadiran anak (per anak)
+$db->exec("CREATE TABLE IF NOT EXISTS refleksi (
+    anak_id INTEGER PRIMARY KEY,
+    q1 TEXT DEFAULT '',
+    q2 TEXT DEFAULT '',
+    q3 TEXT DEFAULT '',
+    berat_badan TEXT DEFAULT '',
+    tinggi_badan TEXT DEFAULT '',
+    lingkar_kepala TEXT DEFAULT '',
+    lingkar_lengan TEXT DEFAULT '',
+    sakit INTEGER DEFAULT 0,
+    izin INTEGER DEFAULT 0,
+    tanpa_keterangan INTEGER DEFAULT 0,
+    FOREIGN KEY (anak_id) REFERENCES anak(id) ON DELETE CASCADE
+)");
+
+// ---- Migrasi: gabung CP Kemuhammadiyah + AIK lama → 1 CP AIK di urutan pertama ----
+$aikNama = "AL ISLAM, KE'AISYIYAHAN DAN KEMUHAMMADIYAHAN (AIK)";
+$adaAik = $db->prepare('SELECT id FROM cp WHERE nama = ?');
+$adaAik->execute([$aikNama]);
+if (!$adaAik->fetch()) {
+    $kemu = $db->query("SELECT id FROM cp WHERE nama LIKE 'Kemuhammadiyah%'")->fetch();
+    $aikLama = $db->query("SELECT id FROM cp WHERE nama LIKE '%(AIK)%'")->fetch();
+    if ($kemu && $aikLama) {
+        $db->beginTransaction();
+        // Pakai id Kemuhammadiyah sebagai induk baru
+        $db->prepare('UPDATE cp SET nama = ?, urutan = 0 WHERE id = ?')->execute([$aikNama, $kemu['id']]);
+        $newId = (int)$kemu['id'];
+        $oldAikId = (int)$aikLama['id'];
+
+        // Pindahkan sub_cp dari AIK lama
+        $db->prepare('UPDATE sub_cp SET cp_id = ? WHERE cp_id = ?')->execute([$newId, $oldAikId]);
+
+        // Pindahkan foto (hindari bentrok unique anak+cp+urutan)
+        $fotos = $db->prepare('SELECT * FROM foto WHERE cp_id = ? ORDER BY id');
+        $fotos->execute([$oldAikId]);
+        foreach ($fotos->fetchAll() as $f) {
+            $u = (int)$f['urutan'];
+            while (true) {
+                $chk = $db->prepare('SELECT 1 FROM foto WHERE anak_id=? AND cp_id=? AND urutan=?');
+                $chk->execute([$f['anak_id'], $newId, $u]);
+                if (!$chk->fetch()) break;
+                $u++;
+            }
+            $db->prepare('UPDATE foto SET cp_id = ?, urutan = ? WHERE id = ?')->execute([$newId, $u, $f['id']]);
+        }
+
+        $db->prepare('DELETE FROM cp WHERE id = ?')->execute([$oldAikId]);
+
+        // Susun sub: AL Islam (2 pertama) lalu Kemuhammadiyahan (2 berikutnya)
+        $order = [
+            'Akhlak dan sikap Islami' => 1,
+            'Keimanan dan akhlak' => 2,
+            'Pengenalan nilai KeMuhammadiyahan' => 3,
+            'Keterampilan hidup dasar' => 4,
+        ];
+        $updSub = $db->prepare('UPDATE sub_cp SET urutan = ? WHERE cp_id = ? AND nama = ?');
+        foreach ($order as $namaSub => $u) $updSub->execute([$u, $newId, $namaSub]);
+
+        // Normalisasi urutan CP lain (AIK = 0 sudah paling atas)
+        $i = 1;
+        $others = $db->query('SELECT id FROM cp WHERE id != ' . $newId . ' ORDER BY urutan, id')->fetchAll();
+        $updCp = $db->prepare('UPDATE cp SET urutan = ? WHERE id = ?');
+        foreach ($others as $o) $updCp->execute([$i++, $o['id']]);
+
+        $db->commit();
+    }
+}
+
 // ---- Seed ----
 $cnt = (int)$db->query('SELECT COUNT(*) c FROM users')->fetch()['c'];
 if ($cnt === 0) {
@@ -141,6 +214,33 @@ if ($cnt === 0) {
 $cnt = (int)$db->query('SELECT COUNT(*) c FROM cp')->fetch()['c'];
 if ($cnt === 0) {
     $cps = [
+        ['AL ISLAM, KE\'AISYIYAHAN DAN KEMUHAMMADIYAHAN (AIK)', [
+            'Akhlak dan sikap Islami' => [
+                'bersikap jujur dan amanah',
+                'saling tolong menolong',
+                'peduli terhadap sesama',
+                'menjaga kebersihan lingkungan',
+                'berperilaku santun',
+            ],
+            'Keimanan dan akhlak' => [
+                'mengenal ciptaan Allah',
+                'bersyukur atas nikmat',
+                'menunjukkan sikap saling menghormati',
+                'menjaga tutur kata',
+            ],
+            'Pengenalan nilai KeMuhammadiyahan' => [
+                'mengenal lambang Muhammadiyah',
+                'menyanyi lagu Kemuhammadiyahan',
+                'mengenal tokoh Muhammadiyah',
+                'mengetahui semangat amal usaha Muhammadiyah',
+            ],
+            'Keterampilan hidup dasar' => [
+                'mengikuti kegiatan sehari-hari',
+                'menyiapkan alat belajar sendiri',
+                'menyimpan barang dengan rapi',
+                'mengikuti aturan kegiatan',
+            ],
+        ]],
         ['Nilai Agama dan Budi Pekerti', [
             'Pembiasaan ibadah dan doa' => [
                 'berdoa sebelum dan sesudah kegiatan',
@@ -238,35 +338,6 @@ if ($cnt === 0) {
                 'mewarnai dan menggambar',
                 'bermain peran',
                 'membuat karya dari bahan sederhana',
-            ],
-        ]],
-        ['Kemuhammadiyah', [
-            'Pengenalan nilai KeMuhammadiyahan' => [
-                'mengenal lambang Muhammadiyah',
-                'menyanyi lagu Kemuhammadiyahan',
-                'mengenal tokoh Muhammadiyah',
-                'mengetahui semangat amal usaha Muhammadiyah',
-            ],
-            'Akhlak dan sikap Islami' => [
-                'bersikap jujur dan amanah',
-                'saling tolong menolong',
-                'peduli terhadap sesama',
-                'menjaga kebersihan lingkungan',
-                'berperilaku santun',
-            ],
-        ]],
-        ['Alam dan Keterampilan Hidup (AIK)', [
-            'Keterampilan hidup dasar' => [
-                'mengikuti kegiatan sehari-hari',
-                'menyiapkan alat belajar sendiri',
-                'menyimpan barang dengan rapi',
-                'mengikuti aturan kegiatan',
-            ],
-            'Keimanan dan akhlak' => [
-                'mengenal ciptaan Allah',
-                'bersyukur atas nikmat',
-                'menunjukkan sikap saling menghormati',
-                'menjaga tutur kata',
             ],
         ]],
     ];

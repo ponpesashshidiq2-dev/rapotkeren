@@ -20,10 +20,11 @@ $profil = getProfil($db);
         <div style="font-weight:700; color:var(--hijau-botol); font-size:14px; margin-bottom:8px;">Ketentuan Format Cetak A4:</div>
         <ul style="margin:0 0 0 18px; padding:0; line-height:1.8; font-size:13.5px; color:var(--text-secondary);">
             <li><strong>Cover & Biodata</strong>: Terpisah dari isi raport (2 halaman: Sampul Sekolah & Biodata Anak + Pasfoto).</li>
-            <li><strong>Isi Raport CP</strong>: 1 CP dicetak 1 lembar A4, <em>kecuali</em> <strong>Jati Diri</strong> dan <strong>Dasar Literasi, Matematika, Sains, Tekno & Seni</strong> yang dibagi menjadi <strong>2 lembar</strong> agar rapi dan tidak terpotong.</li>
+            <li><strong>Isi Raport CP</strong>: 1 CP dicetak 1 lembar A4, <em>kecuali</em> <strong>AIK</strong> (AL ISLAM, KE'AISYIYAHAN DAN KEMUHAMMADIYAHAN — lembar 1: AL Islam & Al-Qur'an, lembar 2: Ke'Aisyiyahan & Kemuhammadiyahan), <strong>Jati Diri</strong> dan <strong>Dasar Literasi, Matematika, Sains, Tekno & Seni</strong> yang dibagi menjadi <strong>2 lembar</strong>.</li>
+            <li><strong>Refleksi Orang Tua</strong>: 1 lembar terpisah berisi 3 pertanyaan refleksi — diisi lewat menu <a href="index.php?route=refleksi" style="font-weight:600; text-decoration:underline;">Refleksi Orang Tua</a>.</li>
             <li><strong>Deskripsi</strong>: Terisi otomatis dari <strong>skor 1–4</strong> pada menu <a href="index.php?route=penilaian" style="font-weight:600; text-decoration:underline;">Penilaian</a> (frasa predikat muncul setelah nama anak sebelum detail capaian).</li>
             <li><strong>Foto Kegiatan</strong>: 2 foto per lembar CP — diunggah lewat menu <a href="index.php?route=foto" style="font-weight:600; text-decoration:underline;">Foto Kegiatan</a> (CP terbagi 2 lembar = 4 foto).</li>
-            <li><strong>Lembar Pengesahan</strong>: 1 lembar memuat tanda tangan otomatis dari data profil (Kepala Sekolah & Guru Kelompok).</li>
+            <li><strong>Pertumbuhan, Kehadiran &amp; Pengesahan</strong>: 1 lembar memuat tabel pertumbuhan/kehadiran serta tanda tangan (Orang Tua/Wali, Guru Kelas, Kepala Sekolah + NIP dari menu <a href="index.php?route=profil" style="font-weight:600; text-decoration:underline;">Profil</a>).</li>
             <?php if (!empty($profil['background_rapot'])): ?>
             <li><strong>Background Rapot Kustom Aktif</strong>: Menggunakan gambar background/bingkai yang diunggah di menu <a href="index.php?route=profil" style="font-weight:600; text-decoration:underline;">Profil</a>.</li>
             <?php endif; ?>
@@ -56,8 +57,8 @@ $profil = getProfil($db);
             <label style="display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; background:#fbfdfc; transition:all .2s;" class="print-opt">
                 <input type="radio" name="bagian" value="isi" checked style="width:18px; height:18px; margin-top:2px; accent-color:var(--hijau-daun);">
                 <div>
-                    <div style="font-weight:700; color:var(--hijau-botol); font-size:14px;">1. Isi Raport Saja (8 Halaman)</div>
-                    <div class="muted" style="font-size:12.5px; margin-top:3px;">Capaian Pembelajaran (5 CP terbagi 7 lembar) + 1 Lembar Pengesahan. Sangat cocok untuk pembagian raport semester.</div>
+                    <div style="font-weight:700; color:var(--hijau-botol); font-size:14px;">1. Isi Raport Saja (9 Halaman)</div>
+                    <div class="muted" style="font-size:12.5px; margin-top:3px;">5 CP (AIK/Jati Diri/Literasi terbagi = 7 lembar) + Refleksi Orang Tua + Pertumbuhan &amp; Pengesahan.</div>
                 </div>
             </label>
 
@@ -72,8 +73,8 @@ $profil = getProfil($db);
             <label style="display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; background:#fbfdfc; transition:all .2s;" class="print-opt">
                 <input type="radio" name="bagian" value="semua" style="width:18px; height:18px; margin-top:2px; accent-color:var(--hijau-daun);">
                 <div>
-                    <div style="font-weight:700; color:var(--hijau-botol); font-size:14px;">3. Cetak Lengkap Semua (10 Halaman)</div>
-                    <div class="muted" style="font-size:12.5px; margin-top:3px;">Seluruh dokumen lengkap dari Cover, Biodata, 5 CP, hingga Lembar Pengesahan dalam satu berkas cetak.</div>
+                    <div style="font-weight:700; color:var(--hijau-botol); font-size:14px;">3. Cetak Lengkap Semua (11 Halaman)</div>
+                    <div class="muted" style="font-size:12.5px; margin-top:3px;">Seluruh dokumen: Cover, Biodata, 7 lembar CP, Refleksi Orang Tua, hingga Pertumbuhan &amp; Pengesahan.</div>
                 </div>
             </label>
         </div>
