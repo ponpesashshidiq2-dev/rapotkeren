@@ -83,6 +83,10 @@ switch ($route) {
         require __DIR__ . '/views/refleksi.php';
         break;
 
+    case 'pertumbuhan':
+        require __DIR__ . '/views/pertumbuhan.php';
+        break;
+
     case 'cetak':
         require __DIR__ . '/views/cetak.php';
         break;

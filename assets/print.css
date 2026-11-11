@@ -189,18 +189,33 @@ table.identitas .colon { width: 4mm; }
     margin-bottom: 6mm;
 }
 
-/* Lembar Refleksi Orang Tua */
+/* Lembar Refleksi Orang Tua — tabel seperti isi rapot */
 .refleksi-title {
     text-align: left; font-size: 14px; font-weight: 800; color: #0f172a;
-    margin-bottom: 5mm; letter-spacing: .2px;
+    margin-bottom: 4mm; letter-spacing: .2px;
 }
-.refleksi-q { margin-bottom: 6mm; }
-.refleksi-q:last-child { margin-bottom: 0; }
-.refleksi-qtext { font-size: 13px; color: #1e293b; line-height: 1.55; margin-bottom: 2.5mm; }
+table.refleksi-tbl {
+    width: 100%; border-collapse: collapse;
+    border: 1.5px solid #c2e0cf;
+    margin-bottom: 6mm;
+}
+table.refleksi-tbl th {
+    background: #167a44; color: #fff; font-size: 12.8px; font-weight: 700;
+    padding: 2.8mm 4mm; border: 1px solid #c2e0cf; text-align: left;
+}
+table.refleksi-tbl td {
+    font-size: 12.5px; padding: 3mm 4mm; border: 1px solid #c2e0cf;
+    color: #1e293b; vertical-align: top; background: #fafdfb;
+}
+table.refleksi-tbl .refleksi-no {
+    text-align: center; font-weight: 700; width: 8mm; vertical-align: top;
+}
+.refleksi-qtext { font-size: 12.8px; color: #1e293b; line-height: 1.55; margin-bottom: 2.5mm; }
 .refleksi-lines span {
     display: block; border-bottom: 1.2px dotted #94a3b8;
-    height: 9mm; margin-bottom: 1.5mm;
+    height: 8mm; margin-bottom: 1.5mm;
 }
+.refleksi-lines span:last-child { margin-bottom: 0; }
 
 /* Lembar Pertumbuhan & Kehadiran */
 .growth-title {
@@ -225,6 +240,10 @@ table.growth-tbl td:nth-child(even) { width: 28%; }
 table.growth-single td:nth-child(3) { padding-left: 6mm; }
 
 /* Tanda tangan lembar baru */
+.ttd-date-row {
+    text-align: right; font-size: 12.8px; color: #1e293b;
+    margin-bottom: 2mm; padding-right: 4mm;
+}
 .ttd-block { display: flex; justify-content: space-between; margin-top: 4mm; }
 .ttd-col { width: 75mm; text-align: center; }
 .ttd-col-right { text-align: center; }

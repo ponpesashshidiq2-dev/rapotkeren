@@ -43,13 +43,29 @@ try {
     $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q2 TEXT DEFAULT ''");
     $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q3 TEXT DEFAULT ''");
 } catch (Exception $e) {}
-// Migrasi: pertanyaan lama per anak → global (diambil yang pertama terisi)
+
+// Daftar pertanyaan refleksi global (bisa tambah/hapus)
+$db->exec("CREATE TABLE IF NOT EXISTS refleksi_pertanyaan (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    urutan INTEGER DEFAULT 0,
+    teks TEXT NOT NULL
+)");
+$cntQ = (int)$db->query('SELECT COUNT(*) c FROM refleksi_pertanyaan')->fetch()['c'];
+if ($cntQ === 0) {
+    // Migrasi dari kolom profil lama / anak lama / default
+    $old = $db->query("SELECT refleksi_q1 q1, refleksi_q2 q2, refleksi_q3 q3 FROM profil WHERE id=1")->fetch();
+    $defs = [
+        trim($old['q1'] ?? '') ?: 'Perubahan positif apa yang sudah ada pada Ananda selama semester ini?',
+        trim($old['q2'] ?? '') ?: 'Pendampingan/dukungan apa yang sudah Bapak/Ibu lakukan kepada Ananda selama semester ini?',
+        trim($old['q3'] ?? '') ?: 'Potensi apa yang ingin Bapak/Ibu maksimalkan dari Ananda?',
+    ];
+    $insQ = $db->prepare('INSERT INTO refleksi_pertanyaan (urutan, teks) VALUES (?, ?)');
+    foreach ($defs as $i => $t) $insQ->execute([$i + 1, $t]);
+}
+
+// Rename sub CP: Akhlak dan sikap Islami → Al-Qur'an dan Ibadah
 try {
-    $db->exec("UPDATE profil SET
-        refleksi_q1 = COALESCE(NULLIF(refleksi_q1, ''), (SELECT q1 FROM refleksi WHERE q1 != '' LIMIT 1)),
-        refleksi_q2 = COALESCE(NULLIF(refleksi_q2, ''), (SELECT q2 FROM refleksi WHERE q2 != '' LIMIT 1)),
-        refleksi_q3 = COALESCE(NULLIF(refleksi_q3, ''), (SELECT q3 FROM refleksi WHERE q3 != '' LIMIT 1))
-        WHERE id = 1");
+    $db->exec("UPDATE sub_cp SET nama = 'Al-Qur''an dan Ibadah' WHERE nama = 'Akhlak dan sikap Islami'");
 } catch (Exception $e) {}
 
 $db->exec("CREATE TABLE IF NOT EXISTS anak (
@@ -193,7 +209,7 @@ if (!$adaAik->fetch()) {
 
         // Susun sub: AL Islam (2 pertama) lalu Kemuhammadiyahan (2 berikutnya)
         $order = [
-            'Akhlak dan sikap Islami' => 1,
+            'Al-Qur\'an dan Ibadah' => 1,
             'Keimanan dan akhlak' => 2,
             'Pengenalan nilai KeMuhammadiyahan' => 3,
             'Keterampilan hidup dasar' => 4,
@@ -228,7 +244,7 @@ $cnt = (int)$db->query('SELECT COUNT(*) c FROM cp')->fetch()['c'];
 if ($cnt === 0) {
     $cps = [
         ['AL ISLAM, KE\'AISYIYAHAN DAN KEMUHAMMADIYAHAN (AIK)', [
-            'Akhlak dan sikap Islami' => [
+            'Al-Qur\'an dan Ibadah' => [
                 'bersikap jujur dan amanah',
                 'saling tolong menolong',
                 'peduli terhadap sesama',

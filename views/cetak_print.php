@@ -19,16 +19,15 @@ $refleksi = [];
 $st = $db->prepare('SELECT * FROM refleksi WHERE anak_id = ?');
 $st->execute([$anakId]);
 if ($r = $st->fetch()) $refleksi = $r;
-$defaultQ = [
-    1 => 'Perubahan positif apa yang sudah ada pada Ananda selama semester ini?',
-    2 => 'Pendampingan/dukungan apa yang sudah Bapak/Ibu lakukan kepada Ananda selama semester ini?',
-    3 => 'Potensi apa yang ingin Bapak/Ibu maksimalkan dari Ananda?',
-];
-$qs = [
-    1 => trim($profil['refleksi_q1'] ?? '') ?: $defaultQ[1],
-    2 => trim($profil['refleksi_q2'] ?? '') ?: $defaultQ[2],
-    3 => trim($profil['refleksi_q3'] ?? '') ?: $defaultQ[3],
-];
+// Pertanyaan refleksi global (bisa banyak, diurutkan)
+$qs = $db->query('SELECT teks FROM refleksi_pertanyaan ORDER BY urutan, id')->fetchAll(PDO::FETCH_COLUMN);
+if (!$qs) {
+    $qs = [
+        'Perubahan positif apa yang sudah ada pada Ananda selama semester ini?',
+        'Pendampingan/dukungan apa yang sudah Bapak/Ibu lakukan kepada Ananda selama semester ini?',
+        'Potensi apa yang ingin Bapak/Ibu maksimalkan dari Ananda?',
+    ];
+}
 
 // skor capaian (1-4)
 $skors = [];
@@ -268,10 +267,10 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 
     $split = isSplitCp($cp['nama']);
     if ($split && isAikCp($cp['nama'])) {
-        // AIK: 2 lembar — Lembar 1 AL Islam & Al-Qur'an, Lembar 2 Ke'Aisyiyahan & Kemuhammadiyahan
+        // AIK: 2 lembar — judul tetap nama CP utuh di kedua lembar
         $pages = [
-            ['title_override' => 'AL ISLAM DAN AL-QUR\'AN',           'subs' => array_slice($subs, 0, 2), 'foto_start' => 1],
-            ['title_override' => 'KE\'AISYIYAHAN DAN KEMUHAMMADIYAHAN', 'subs' => array_slice($subs, 2),    'foto_start' => 3],
+            ['subs' => array_slice($subs, 0, 2), 'foto_start' => 1],
+            ['subs' => array_slice($subs, 2),    'foto_start' => 3],
         ];
     } elseif ($split) {
         // Jati Diri / Literasi: 2 halaman, masing-masing tetap 2 foto (lembar 1: foto 1&2, lembar 2: foto 3&4)
@@ -302,11 +301,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 </tr>
             </table>
 
-            <?php if (!empty($pInfo['title_override'])): ?>
-                <h1 class="cp-title">✿ <?= e($pInfo['title_override']) ?> ✿</h1>
-            <?php else: ?>
-                <h1 class="cp-title">✿ <?= e(strtoupper($cp['nama'])) ?><?= e($pInfo['title_suffix'] ?? '') ?> ✿</h1>
-            <?php endif; ?>
+            <h1 class="cp-title">✿ <?= e(strtoupper($cp['nama'])) ?><?= e($pInfo['title_suffix'] ?? '') ?> ✿</h1>
 
             <?php
             $color = 0;
@@ -365,14 +360,27 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
         </div>
 
         <div class="refleksi-title">REFLEKSI ORANG TUA</div>
-        <?php foreach ($qs as $i => $q): ?>
-        <div class="refleksi-q">
-            <div class="refleksi-qtext"><?= $i ?>. <?= e($q) ?></div>
-            <div class="refleksi-lines">
-                <span></span><span></span><span></span>
-            </div>
-        </div>
-        <?php endforeach; ?>
+        <table class="refleksi-tbl">
+            <thead>
+                <tr>
+                    <th style="width:8mm;">No</th>
+                    <th>Pertanyaan &amp; Jawaban Orang Tua / Wali</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($qs as $i => $q): ?>
+                <tr>
+                    <td class="refleksi-no"><?= $i + 1 ?>.</td>
+                    <td>
+                        <div class="refleksi-qtext"><?= e($q) ?></div>
+                        <div class="refleksi-lines">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
 
         <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
     </div>
@@ -426,6 +434,10 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             </tbody>
         </table>
 
+        <div class="ttd-date-row">
+            <?= e($profil['kabupaten'] ?: $profil['desa'] ?: '..........................') ?>, <?= tanggalIndo() ?>
+        </div>
+
         <div class="ttd-block">
             <div class="ttd-col">
                 <div class="ttd-space"></div>
@@ -434,7 +446,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 <div class="ttd-name-print"><?= e($anak['nama_ayah'] ?: ($anak['nama_wali'] ?: ($anak['nama_ibu'] ?: ''))) ?></div>
             </div>
             <div class="ttd-col ttd-col-right">
-                <div class="ttd-date"><?= e(($profil['desa'] ?: $profil['kabupaten'] ?: '..........................')) ?>, <?= tanggalIndo() ?></div>
                 <div class="ttd-space"></div>
                 <div class="ttd-line"></div>
                 <div class="ttd-role">Guru Kelas</div>
