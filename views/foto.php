@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $anakId) {
     $act = $_POST['act'] ?? 'simpan';
 
     if ($act === 'simpan') {
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (($_POST['format'] ?? '') === 'json');
         foreach ($cps as $cp) {
             $max = isSplitCpName($cp['nama']) ? 4 : 2; // split: 2 foto per lembar × 2 lembar
             for ($urut = 1; $urut <= $max; $urut++) {
@@ -42,6 +43,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $anakId) {
                        ->execute([$ket, $anakId, (int)$cp['id'], $urut]);
                 }
             }
+        }
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'msg' => 'Foto kegiatan disimpan.']);
+            exit;
         }
         flash('Foto kegiatan disimpan.');
         redirect('index.php?route=foto&anak_id=' . $anakId);
@@ -133,7 +139,8 @@ foreach ($st->fetchAll() as $r) $fotos[(int)$r['cp_id']][(int)$r['urutan']] = $r
     <?php endforeach; ?>
 
     <div class="form-actions" style="margin-bottom:24px;">
-        <button class="btn btn-primary">Simpan Semua Foto</button>
+        <button type="button" class="btn btn-primary" id="btnSimpanFoto">Simpan Semua Foto</button>
+        <span id="fotoStatus" class="muted" style="font-size:13px; margin-left:8px;"></span>
         <a class="btn" href="index.php?route=penilaian&anak_id=<?= $anakId ?>">← Kembali ke Penilaian</a>
         <a class="btn" href="index.php?route=cetak">Lanjut: Cetak →</a>
     </div>
@@ -152,6 +159,26 @@ function submitDel(cp, u) {
     document.getElementById('delUrut').value = u;
     document.getElementById('delFotoForm').submit();
 }
+
+// Simpan langsung selesai — tanpa loading, upload diproses di belakang
+document.getElementById('btnSimpanFoto').addEventListener('click', function () {
+    var form = this.closest('form');
+    var status = document.getElementById('fotoStatus');
+    var fd = new FormData(form);
+    fd.append('format', 'json');
+    status.textContent = 'Tersimpan.';
+    status.style.color = '#187a46';
+    fetch(form.action || window.location.href, {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function (r) { return r.json(); }).then(function () {
+        // Selesai di belakang — muat ulang ringan agar thumbnail tampil
+        window.location.reload();
+    }).catch(function () {
+        window.location.reload();
+    });
+});
 </script>
 <?php else: ?>
     <div class="panel muted">Pilih anak terlebih dahulu.</div>

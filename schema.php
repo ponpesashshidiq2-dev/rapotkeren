@@ -38,6 +38,19 @@ try {
     $db->exec("ALTER TABLE profil ADD COLUMN nip_kepala TEXT DEFAULT ''");
     $db->exec("ALTER TABLE profil ADD COLUMN nip_guru TEXT DEFAULT ''");
 } catch (Exception $e) {}
+try {
+    $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q1 TEXT DEFAULT ''");
+    $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q2 TEXT DEFAULT ''");
+    $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q3 TEXT DEFAULT ''");
+} catch (Exception $e) {}
+// Migrasi: pertanyaan lama per anak → global (diambil yang pertama terisi)
+try {
+    $db->exec("UPDATE profil SET
+        refleksi_q1 = COALESCE(NULLIF(refleksi_q1, ''), (SELECT q1 FROM refleksi WHERE q1 != '' LIMIT 1)),
+        refleksi_q2 = COALESCE(NULLIF(refleksi_q2, ''), (SELECT q2 FROM refleksi WHERE q2 != '' LIMIT 1)),
+        refleksi_q3 = COALESCE(NULLIF(refleksi_q3, ''), (SELECT q3 FROM refleksi WHERE q3 != '' LIMIT 1))
+        WHERE id = 1");
+} catch (Exception $e) {}
 
 $db->exec("CREATE TABLE IF NOT EXISTS anak (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

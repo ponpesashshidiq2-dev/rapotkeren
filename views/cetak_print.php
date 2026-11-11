@@ -14,11 +14,21 @@ if (!$anak) redirect('index.php?route=cetak');
 $profil = getProfil($db);
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 
-// Refleksi / pertumbuhan / kehadiran
+// Refleksi global (pertanyaan sama untuk semua anak) + pertumbuhan/kehadiran per anak
 $refleksi = [];
 $st = $db->prepare('SELECT * FROM refleksi WHERE anak_id = ?');
 $st->execute([$anakId]);
 if ($r = $st->fetch()) $refleksi = $r;
+$defaultQ = [
+    1 => 'Perubahan positif apa yang sudah ada pada Ananda selama semester ini?',
+    2 => 'Pendampingan/dukungan apa yang sudah Bapak/Ibu lakukan kepada Ananda selama semester ini?',
+    3 => 'Potensi apa yang ingin Bapak/Ibu maksimalkan dari Ananda?',
+];
+$qs = [
+    1 => trim($profil['refleksi_q1'] ?? '') ?: $defaultQ[1],
+    2 => trim($profil['refleksi_q2'] ?? '') ?: $defaultQ[2],
+    3 => trim($profil['refleksi_q3'] ?? '') ?: $defaultQ[3],
+];
 
 // skor capaian (1-4)
 $skors = [];
@@ -354,23 +364,15 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             &nbsp;&nbsp;|&nbsp;&nbsp; Tahun Ajaran: <?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)
         </div>
 
-        <div class="refleksi-box">
-            <div class="refleksi-title">REFLEKSI ORANG TUA</div>
-            <?php
-            $qs = [
-                1 => trim($refleksi['q1'] ?? '') ?: 'Perubahan positif apa yang sudah ada pada Ananda selama semester ini?',
-                2 => trim($refleksi['q2'] ?? '') ?: 'Pendampingan/dukungan apa yang sudah Bapak/Ibu lakukan kepada Ananda selama semester ini?',
-                3 => trim($refleksi['q3'] ?? '') ?: 'Potensi apa yang ingin Bapak/Ibu maksimalkan dari Ananda?',
-            ];
-            foreach ($qs as $i => $q): ?>
-            <div class="refleksi-q">
-                <div class="refleksi-qtext"><?= $i ?>. <?= e($q) ?></div>
-                <div class="refleksi-lines">
-                    <span></span><span></span><span></span>
-                </div>
+        <div class="refleksi-title">REFLEKSI ORANG TUA</div>
+        <?php foreach ($qs as $i => $q): ?>
+        <div class="refleksi-q">
+            <div class="refleksi-qtext"><?= $i ?>. <?= e($q) ?></div>
+            <div class="refleksi-lines">
+                <span></span><span></span><span></span>
             </div>
-            <?php endforeach; ?>
         </div>
+        <?php endforeach; ?>
 
         <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
     </div>
@@ -389,25 +391,40 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 
         <div class="growth-title">PERTUMBUHAN DAN KEHADIRAN ANAK</div>
 
-        <div class="growth-tables">
-            <table class="growth-tbl">
-                <thead><tr><th colspan="2">Pertumbuhan</th></tr></thead>
-                <tbody>
-                    <tr><td>Berat Badan</td><td><?= e($refleksi['berat_badan'] ?? '') !== '' ? e($refleksi['berat_badan']) : '................' ?></td></tr>
-                    <tr><td>Tinggi Badan</td><td><?= e($refleksi['tinggi_badan'] ?? '') !== '' ? e($refleksi['tinggi_badan']) : '................' ?></td></tr>
-                    <tr><td>Lingkar Kepala</td><td><?= e($refleksi['lingkar_kepala'] ?? '') !== '' ? e($refleksi['lingkar_kepala']) : '................' ?></td></tr>
-                    <tr><td>Lingkar Lengan</td><td><?= e($refleksi['lingkar_lengan'] ?? '') !== '' ? e($refleksi['lingkar_lengan']) : '................' ?></td></tr>
-                </tbody>
-            </table>
-            <table class="growth-tbl">
-                <thead><tr><th colspan="2">Kehadiran Anak</th></tr></thead>
-                <tbody>
-                    <tr><td>Sakit</td><td><?= isset($refleksi['sakit']) ? (int)$refleksi['sakit'] : 0 ?></td></tr>
-                    <tr><td>Izin</td><td><?= isset($refleksi['izin']) ? (int)$refleksi['izin'] : 0 ?></td></tr>
-                    <tr><td>Tanpa Keterangan</td><td><?= isset($refleksi['tanpa_keterangan']) ? (int)$refleksi['tanpa_keterangan'] : 0 ?></td></tr>
-                </tbody>
-            </table>
-        </div>
+        <table class="growth-tbl growth-single">
+            <thead>
+                <tr>
+                    <th colspan="2">Pertumbuhan</th>
+                    <th colspan="2">Kehadiran Anak</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Berat Badan</td>
+                    <td><?= e($refleksi['berat_badan'] ?? '') !== '' ? e($refleksi['berat_badan']) : '................' ?></td>
+                    <td>Sakit</td>
+                    <td><?= isset($refleksi['sakit']) ? (int)$refleksi['sakit'] : 0 ?></td>
+                </tr>
+                <tr>
+                    <td>Tinggi Badan</td>
+                    <td><?= e($refleksi['tinggi_badan'] ?? '') !== '' ? e($refleksi['tinggi_badan']) : '................' ?></td>
+                    <td>Izin</td>
+                    <td><?= isset($refleksi['izin']) ? (int)$refleksi['izin'] : 0 ?></td>
+                </tr>
+                <tr>
+                    <td>Lingkar Kepala</td>
+                    <td><?= e($refleksi['lingkar_kepala'] ?? '') !== '' ? e($refleksi['lingkar_kepala']) : '................' ?></td>
+                    <td>Tanpa Keterangan</td>
+                    <td><?= isset($refleksi['tanpa_keterangan']) ? (int)$refleksi['tanpa_keterangan'] : 0 ?></td>
+                </tr>
+                <tr>
+                    <td>Lingkar Lengan</td>
+                    <td><?= e($refleksi['lingkar_lengan'] ?? '') !== '' ? e($refleksi['lingkar_lengan']) : '................' ?></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
 
         <div class="ttd-block">
             <div class="ttd-col">
@@ -422,9 +439,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 <div class="ttd-line"></div>
                 <div class="ttd-role">Guru Kelas</div>
                 <div class="ttd-name-print"><?= e($profil['guru_kelompok'] ?: '') ?></div>
-                <?php if (!empty($profil['nip_guru'])): ?>
-                <div class="ttd-nip">NBM. <?= e($profil['nip_guru']) ?></div>
-                <?php endif; ?>
+                <div class="ttd-nip">NBM. <?= e($profil['nip_guru'] ?: '........................') ?></div>
             </div>
         </div>
 
@@ -434,16 +449,8 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             <div class="ttd-space-lg"></div>
             <div class="ttd-line ttd-line-center"></div>
             <div class="ttd-name-print"><strong><?= e($profil['kepala_sekolah'] ?: '') ?></strong></div>
-            <?php if (!empty($profil['nip_kepala'])): ?>
-            <div class="ttd-nip">NIP/NBM. <?= e($profil['nip_kepala']) ?></div>
-            <?php else: ?>
-            <div class="ttd-nip">NIP/NBM: ................................</div>
-            <?php endif; ?>
+            <div class="ttd-nip">NIP/NBM. <?= e($profil['nip_kepala'] ?: '........................') ?></div>
         </div>
-
-        <p class="catatan">
-            <em>Catatan: Foto pada bagian dokumentasi merupakan kegiatan nyata anak selama proses pembelajaran. Guru dapat mengunggah foto melalui menu Foto Kegiatan. Refleksi orang tua diisi pada lembar terpisah.</em>
-        </p>
 
         <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
     </div>

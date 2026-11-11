@@ -190,46 +190,39 @@ table.identitas .colon { width: 4mm; }
 }
 
 /* Lembar Refleksi Orang Tua */
-.refleksi-box {
-    border: 2.5px solid #f59e0b;
-    border-radius: 2mm;
-    padding: 5mm 6mm;
-    background: #fffdf5;
-}
 .refleksi-title {
-    text-align: center; font-size: 14px; font-weight: 800; color: #92400e;
-    background: #fef3c7; border: 1.5px solid #f59e0b;
-    padding: 2.5mm; margin-bottom: 6mm; letter-spacing: .4px;
+    text-align: left; font-size: 14px; font-weight: 800; color: #0f172a;
+    margin-bottom: 5mm; letter-spacing: .2px;
 }
-.refleksi-q { margin-bottom: 7mm; }
+.refleksi-q { margin-bottom: 6mm; }
 .refleksi-q:last-child { margin-bottom: 0; }
-.refleksi-qtext { font-size: 12.8px; color: #1e293b; line-height: 1.55; margin-bottom: 3mm; }
+.refleksi-qtext { font-size: 13px; color: #1e293b; line-height: 1.55; margin-bottom: 2.5mm; }
 .refleksi-lines span {
-    display: block; border-bottom: 1.5px dotted #64748b;
-    height: 8mm; margin-bottom: 2mm;
+    display: block; border-bottom: 1.2px dotted #94a3b8;
+    height: 9mm; margin-bottom: 1.5mm;
 }
 
 /* Lembar Pertumbuhan & Kehadiran */
 .growth-title {
-    text-align: center; font-size: 14px; font-weight: 800; color: #92400e;
-    background: #fef3c7; border: 2px solid #f59e0b;
-    padding: 3mm; margin-bottom: 6mm; letter-spacing: .3px;
+    text-align: center; font-size: 14px; font-weight: 800; color: #0f172a;
+    margin-bottom: 5mm; letter-spacing: .2px;
 }
-.growth-tables { display: flex; gap: 6mm; margin-bottom: 8mm; }
 table.growth-tbl {
-    flex: 1; border-collapse: collapse;
-    border: 2px solid #f59e0b;
+    width: 100%; border-collapse: collapse;
+    border: 1.5px solid #cbd5e1;
+    margin-bottom: 8mm;
 }
 table.growth-tbl th {
-    background: #fef3c7; color: #92400e; font-size: 12.8px; font-weight: 800;
-    padding: 2.5mm; border: 1.5px solid #f59e0b; text-align: center;
+    background: #f1f5f9; color: #0f172a; font-size: 12.8px; font-weight: 700;
+    padding: 2.5mm 3mm; border: 1px solid #cbd5e1; text-align: left;
 }
 table.growth-tbl td {
-    font-size: 12.5px; padding: 2.2mm 3mm; border: 1.5px solid #f59e0b;
+    font-size: 12.5px; padding: 2.2mm 3mm; border: 1px solid #cbd5e1;
     color: #1e293b;
 }
-table.growth-tbl td:first-child { font-weight: 600; width: 45%; }
-table.growth-tbl td:last-child { text-align: right; }
+table.growth-tbl td:nth-child(odd) { font-weight: 600; width: 22%; }
+table.growth-tbl td:nth-child(even) { width: 28%; }
+table.growth-single td:nth-child(3) { padding-left: 6mm; }
 
 /* Tanda tangan lembar baru */
 .ttd-block { display: flex; justify-content: space-between; margin-top: 4mm; }
