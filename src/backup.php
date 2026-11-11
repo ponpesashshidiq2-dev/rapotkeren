@@ -4,7 +4,7 @@
 function backup_tables(): array {
     // Urutan aman terhadap foreign key (induk → anak)
     return ['cp', 'sub_cp', 'capaian', 'profil', 'refleksi_pertanyaan',
-            'anak', 'penilaian', 'deskripsi', 'foto', 'refleksi'];
+            'anak', 'share', 'penilaian', 'deskripsi', 'foto', 'refleksi', 'revisi'];
 }
 
 function backup_table_columns(PDO $db, string $table): array {

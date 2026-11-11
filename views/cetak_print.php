@@ -1,5 +1,6 @@
 <?php
 // Halaman cetak raport (A4)
+require_once BASE_DIR . '/src/authz.php';
 $anakId = (int)($_GET['anak_id'] ?? 0);
 $bagian = $_GET['bagian'] ?? 'semua'; // 'semua', 'isi', 'cover_biodata'
 if (!in_array($bagian, ['semua', 'isi', 'cover_biodata'], true)) {
@@ -10,6 +11,10 @@ $st = $db->prepare('SELECT * FROM anak WHERE id = ?');
 $st->execute([$anakId]);
 $anak = $st->fetch();
 if (!$anak) redirect('index.php?route=cetak');
+if (anakAccess($db, $anakId) === null) {
+    flash('Anda tidak punya akses mencetak raport anak ini.', 'error');
+    redirect('index.php?route=cetak');
+}
 
 $profil = getProfil($db);
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();

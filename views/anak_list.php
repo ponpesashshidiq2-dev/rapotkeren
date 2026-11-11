@@ -1,7 +1,19 @@
 <?php
 require_once __DIR__ . '/layout.php';
 page_header('Data Anak', 'anak');
-$rows = $db->query('SELECT * FROM anak ORDER BY nama_lengkap')->fetchAll();
+
+$scope = anakScope($db);
+$st = $db->prepare('SELECT a.*, u.username AS pemilik,
+                    (SELECT GROUP_CONCAT(u2.username || \': \' ||
+                        CASE s.role WHEN \'viewer\' THEN \'lihat saja\' ELSE \'editor\' END, \', \')
+                     FROM share s JOIN users u2 ON u2.id = s.user_id
+                     WHERE s.anak_id = a.id) AS dibagikan
+                    FROM anak a
+                    LEFT JOIN users u ON u.id = a.user_id
+                    WHERE ' . $scope['where'] . '
+                    ORDER BY a.nama_lengkap');
+$st->execute($scope['params']);
+$rows = $st->fetchAll();
 ?>
 <div class="toolbar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -44,11 +56,15 @@ $rows = $db->query('SELECT * FROM anak ORDER BY nama_lengkap')->fetchAll();
             <th>JK</th>
             <th>Kelompok</th>
             <th>Tempat & Tgl Lahir</th>
+            <th>Akses</th>
             <th style="text-align:right;">Aksi</th>
         </tr>
     </thead>
     <tbody>
-    <?php foreach ($rows as $r): ?>
+    <?php foreach ($rows as $r):
+        $isOwnerUser = ((int)$r['user_id'] === currentUserId($db));
+        $access = anakAccess($db, (int)$r['id']);
+    ?>
         <tr>
             <td>
                 <?php if ($r['foto']): ?>
@@ -69,14 +85,44 @@ $rows = $db->query('SELECT * FROM anak ORDER BY nama_lengkap')->fetchAll();
             </td>
             <td><span style="display:inline-block; padding:2px 8px; border-radius:6px; background:var(--hijau-soft); color:var(--hijau-botol); font-size:12.5px; font-weight:600;"><?= e($r['kelompok'] ?: '-') ?></span></td>
             <td style="color:var(--text-secondary);"><?= e($r['tempat_lahir'] ? ($r['tempat_lahir'] . ', ' . $r['tanggal_lahir']) : '-') ?></td>
+            <td style="font-size:12.5px;">
+                <?php if ($isOwnerUser): ?>
+                    <span class="badge badge-green">Milik saya</span>
+                <?php elseif ($access === 'owner'): ?>
+                    <span class="badge badge-green">Admin</span>
+                    <div class="muted" style="margin-top:3px;">Pemilik: <?= e($r['pemilik'] ?: '-') ?></div>
+                <?php elseif ($access === 'editor'): ?>
+                    <span class="badge" style="background:#e0f2fe; color:#0369a1;">Editor</span>
+                    <div class="muted" style="margin-top:3px;">dari <?= e($r['pemilik'] ?: '-') ?></div>
+                <?php elseif ($access === 'viewer'): ?>
+                    <span class="badge" style="background:#f1f5f9; color:#475569;">Lihat saja</span>
+                    <div class="muted" style="margin-top:3px;">dari <?= e($r['pemilik'] ?: '-') ?></div>
+                <?php else: ?>
+                    <span class="badge" style="background:#f1f5f9; color:#475569;">—</span>
+                <?php endif; ?>
+                <?php if ($r['dibagikan']): ?>
+                    <div class="muted" style="margin-top:3px; font-size:11.5px;">Dibagikan: <?= e($r['dibagikan']) ?></div>
+                <?php endif; ?>
+            </td>
             <td>
-                <div class="row-actions" style="justify-content:flex-end;">
-                    <a class="btn btn-sm btn-outline" href="index.php?route=anak_form&id=<?= (int)$r['id'] ?>">Ubah</a>
+                <div class="row-actions" style="justify-content:flex-end; flex-wrap:wrap;">
+                    <?php if ($access === 'owner'): ?>
+                        <a class="btn btn-sm btn-outline" href="index.php?route=anak_share&anak_id=<?= (int)$r['id'] ?>">Bagikan</a>
+                    <?php endif; ?>
+                    <?php if ($access === 'owner' || $access === 'editor'): ?>
+                        <a class="btn btn-sm btn-outline" href="index.php?route=anak_form&id=<?= (int)$r['id'] ?>">Ubah</a>
+                    <?php endif; ?>
+                    <a class="btn btn-sm" href="index.php?route=revisi&anak_id=<?= (int)$r['id'] ?>">Riwayat</a>
+                    <?php if ($access === 'owner'): ?>
                     <form method="post" action="index.php?route=anak_delete" class="inline"
                           onsubmit="return confirm('Hapus data <?= e($r['nama_lengkap']) ?>?')">
                         <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
                         <button class="btn btn-sm btn-danger">Hapus</button>
                     </form>
+                    <?php endif; ?>
+                    <?php if (!$access): ?>
+                        <span class="muted" style="font-size:12px;">—</span>
+                    <?php endif; ?>
                 </div>
             </td>
         </tr>

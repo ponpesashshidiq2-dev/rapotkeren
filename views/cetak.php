@@ -2,7 +2,10 @@
 require_once __DIR__ . '/layout.php';
 page_header('Cetak Raport', 'cetak');
 
-$anakList = $db->query('SELECT id, nama_lengkap, kelompok FROM anak ORDER BY nama_lengkap')->fetchAll();
+$scope = anakScope($db);
+$st = $db->prepare('SELECT id, nama_lengkap, kelompok FROM anak a WHERE ' . $scope['where'] . ' ORDER BY nama_lengkap');
+$st->execute($scope['params']);
+$anakList = $st->fetchAll();
 $profil = getProfil($db);
 ?>
 <div class="panel form-card">

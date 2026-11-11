@@ -8,9 +8,22 @@ if ($id) {
     $st->execute([$id]);
     $row = $st->fetch() ?: [];
     if (!$row) redirect('index.php?route=anak');
+    $access = anakAccess($db, $id);
+    if (!$access) {
+        flash('Anda tidak punya akses ke data anak ini.', 'error');
+        redirect('index.php?route=anak');
+    }
+    if ($access === 'viewer') {
+        flash('Data anak ini hanya bisa dilihat (bukan editor).', 'error');
+        redirect('index.php?route=anak');
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($id && !canEditAnak($db, $id)) {
+        flash('Anda tidak punya akses mengubah data anak ini.', 'error');
+        redirect('index.php?route=anak');
+    }
     $fields = ['nama_lengkap','nama_panggilan','nisn','tempat_lahir','tanggal_lahir','jenis_kelamin',
                'agama','anak_ke','jumlah_saudara','kelompok','nama_ayah','pekerjaan_ayah',
                'nama_ibu','pekerjaan_ibu','nama_wali','alamat_jalan','alamat_rt_rw','alamat_desa',
@@ -30,11 +43,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sql = 'UPDATE anak SET foto=?, ' . implode(', ', array_map(fn($f) => "$f=?", $fields)) . ' WHERE id=?';
         $params = array_merge([$foto], array_map(fn($f) => $data[$f], $fields), [$id]);
         $db->prepare($sql)->execute($params);
+        $labels = ['nama_lengkap' => 'nama', 'tanggal_lahir' => 'tgl lahir', 'jenis_kelamin' => 'JK',
+                   'nama_ayah' => 'ayah', 'nama_ibu' => 'ibu', 'kelompok' => 'kelompok'];
+        $ringkasan = revisiDiff($row, $data, array_merge(['foto'], $fields), $labels);
+        if ($row['foto'] !== $foto) {
+            $ringkasan = ($ringkasan ? $ringkasan . '; ' : '') . 'pasfoto diganti';
+        }
+        logRevisi($db, $id, 'anak', (string)$id, 'ubah', $ringkasan ?: 'Data anak disimpan tanpa perubahan');
         flash('Data anak diperbarui.');
     } else {
-        $sql = 'INSERT INTO anak (foto, ' . implode(', ', $fields) . ') VALUES (?, ' . implode(', ', array_fill(0, count($fields), '?')) . ')';
-        $params = array_merge([$foto], array_map(fn($f) => $data[$f], $fields));
+        $sql = 'INSERT INTO anak (foto, user_id, ' . implode(', ', $fields) . ')
+                VALUES (?, ?, ' . implode(', ', array_fill(0, count($fields), '?')) . ')';
+        $params = array_merge([$foto, currentUserId($db)], array_map(fn($f) => $data[$f], $fields));
         $db->prepare($sql)->execute($params);
+        $newId = (int)$db->lastInsertId();
+        logRevisi($db, $newId, 'anak', (string)$newId, 'tambah',
+            'Anak "' . ($data['nama_lengkap'] ?: '-') . '" ditambahkan');
         flash('Data anak ditambahkan.');
     }
     redirect('index.php?route=anak');

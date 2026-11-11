@@ -4,8 +4,20 @@
 $db->exec("CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'guru'
 )");
+
+// Migrasi: tambah kolom role (admin|guru) bila belum ada
+try {
+    $db->exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'guru'");
+} catch (Exception $e) {}
+$db->exec("UPDATE users SET role = 'admin' WHERE username = 'admin'");
+// Pastikan selalu ada minimal satu admin
+$adaAdmin = (int)$db->query("SELECT COUNT(*) c FROM users WHERE role = 'admin'")->fetch()['c'];
+if ($adaAdmin === 0) {
+    $db->exec("UPDATE users SET role = 'admin' WHERE id = (SELECT MIN(id) FROM users)");
+}
 
 $db->exec("CREATE TABLE IF NOT EXISTS profil (
     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -234,8 +246,8 @@ if (!$adaAik->fetch()) {
 // ---- Seed ----
 $cnt = (int)$db->query('SELECT COUNT(*) c FROM users')->fetch()['c'];
 if ($cnt === 0) {
-    $db->prepare('INSERT INTO users (username, password) VALUES (?, ?)')
-       ->execute(['admin', password_hash('admin123', PASSWORD_DEFAULT)]);
+    $db->prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)')
+       ->execute(['admin', password_hash('admin123', PASSWORD_DEFAULT), 'admin']);
 }
 
 $cnt = (int)$db->query('SELECT COUNT(*) c FROM profil')->fetch()['c'];
@@ -395,3 +407,36 @@ if ($cnt === 0) {
         }
     }
 }
+
+// ---- Migrasi multi-user: kepemilikan anak, sharing & riwayat revisi ----
+try {
+    $db->exec('ALTER TABLE anak ADD COLUMN user_id INTEGER DEFAULT 0');
+} catch (Exception $e) {}
+// Data lama dimiliki oleh user pertama (admin)
+$db->exec('UPDATE anak SET user_id = (SELECT MIN(id) FROM users)
+           WHERE user_id = 0 OR user_id IS NULL');
+
+// Berbagi data anak antar user (editor = boleh ubah, viewer = hanya lihat)
+$db->exec("CREATE TABLE IF NOT EXISTS share (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    anak_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    role TEXT NOT NULL DEFAULT 'editor',
+    created_by INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT '',
+    UNIQUE(anak_id, user_id),
+    FOREIGN KEY (anak_id) REFERENCES anak(id) ON DELETE CASCADE
+)");
+
+// Riwayat perubahan data (siapa, kapan, apa yang diubah)
+$db->exec("CREATE TABLE IF NOT EXISTS revisi (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    anak_id INTEGER DEFAULT 0,
+    tabel TEXT NOT NULL,
+    row_key TEXT DEFAULT '',
+    user_id INTEGER DEFAULT 0,
+    aksi TEXT NOT NULL,
+    ringkasan TEXT DEFAULT '',
+    created_at TEXT DEFAULT ''
+)");
+$db->exec('CREATE INDEX IF NOT EXISTS idx_revisi_anak ON revisi(anak_id)');

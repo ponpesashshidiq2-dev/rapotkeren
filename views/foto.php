@@ -2,7 +2,10 @@
 require_once __DIR__ . '/layout.php';
 
 $anakId = (int)($_GET['anak_id'] ?? ($_POST['anak_id'] ?? 0));
-$anakList = $db->query('SELECT id, nama_lengkap, kelompok FROM anak ORDER BY nama_lengkap')->fetchAll();
+$scope = anakScope($db);
+$st = $db->prepare('SELECT id, nama_lengkap, kelompok FROM anak a WHERE ' . $scope['where'] . ' ORDER BY nama_lengkap');
+$st->execute($scope['params']);
+$anakList = $st->fetchAll();
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 
 function isSplitCpName(string $nama): bool {
@@ -13,12 +16,27 @@ function isSplitCpName(string $nama): bool {
         || (strpos($n, 'kemuhammadiyahan') !== false);
 }
 
+function fotoDenied(bool $isAjax, int $anakId): void {
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'msg' => 'Anda tidak punya akses mengubah foto anak ini.']);
+        exit;
+    }
+    flash('Anda tidak punya akses mengubah foto anak ini.', 'error');
+    redirect('index.php?route=foto&anak_id=' . $anakId);
+}
+
 // ---- Simpan / hapus foto ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $anakId) {
     $act = $_POST['act'] ?? 'simpan';
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (($_POST['format'] ?? '') === 'json');
+
+    if ($act === 'simpan' || $act === 'del_foto') {
+        if (!canEditAnak($db, $anakId)) fotoDenied($isAjax, $anakId);
+    }
 
     if ($act === 'simpan') {
-        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (($_POST['format'] ?? '') === 'json');
+        $log = [];
         foreach ($cps as $cp) {
             $max = isSplitCpName($cp['nama']) ? 4 : 2; // split: 2 foto per lembar × 2 lembar
             for ($urut = 1; $urut <= $max; $urut++) {
@@ -35,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $anakId) {
                         $db->prepare('INSERT INTO foto (anak_id, cp_id, urutan, file) VALUES (?,?,?,?)
                                       ON CONFLICT(anak_id, cp_id, urutan) DO UPDATE SET file=excluded.file')
                            ->execute([$anakId, (int)$cp['id'], $urut, $new]);
+                        $log[] = 'foto ' . $urut . ' (' . authz_trunc($cp['nama'], 25) . ') diunggah';
                     }
                 }
                 $ket = trim($_POST[$ketField] ?? '');
@@ -44,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $anakId) {
                 }
             }
         }
+        if ($log) logRevisi($db, $anakId, 'foto', (string)$anakId, 'tambah', implode('; ', $log));
         if ($isAjax) {
             header('Content-Type: application/json');
             echo json_encode(['ok' => true, 'msg' => 'Foto kegiatan disimpan.']);
@@ -61,9 +81,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $anakId) {
         if ($r = $st->fetch()) deleteUpload($r['file']);
         $db->prepare('DELETE FROM foto WHERE anak_id=? AND cp_id=? AND urutan=?')
            ->execute([$anakId, $cpId, $urut]);
+        logRevisi($db, $anakId, 'foto', (string)$anakId, 'hapus', "Foto $urut (CP #$cpId) dihapus");
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'msg' => 'Foto dihapus.']);
+            exit;
+        }
         flash('Foto dihapus.');
         redirect('index.php?route=foto&anak_id=' . $anakId);
     }
+}
+
+// Validasi akses SEBELUM output HTML (agar redirect berhasil)
+$canEdit = false;
+if ($anakId && $anakList) {
+    $access = anakAccess($db, $anakId);
+    if (!$access) {
+        flash('Anda tidak punya akses ke data anak ini.', 'error');
+        redirect('index.php?route=foto');
+    }
+    $canEdit = ($access === 'owner' || $access === 'editor');
 }
 
 page_header('Upload Foto Kegiatan', 'foto');
@@ -91,6 +128,9 @@ $st = $db->prepare('SELECT * FROM foto WHERE anak_id = ?');
 $st->execute([$anakId]);
 foreach ($st->fetchAll() as $r) $fotos[(int)$r['cp_id']][(int)$r['urutan']] = $r;
 ?>
+<?php if (!$canEdit): ?>
+<div class="alert alert-error">Anda hanya punya akses <strong>lihat saja</strong> untuk anak ini.</div>
+<?php endif; ?>
 <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="anak_id" value="<?= $anakId ?>">
     <input type="hidden" name="act" value="simpan">
@@ -121,15 +161,17 @@ foreach ($st->fetchAll() as $r) $fotos[(int)$r['cp_id']][(int)$r['urutan']] = $r
                 <div class="foto-slot">
                     <?php if (!empty($f['file'])): ?>
                         <img src="<?= e($f['file']) ?>" alt="Foto <?= $i ?>">
+                        <?php if ($canEdit): ?>
                         <button type="button" class="btn-link"
                             onclick="submitDel(<?= (int)$cp['id'] ?>, <?= $i ?>)">hapus foto</button>
+                        <?php endif; ?>
                     <?php else: ?>
                         <div class="foto-empty">Foto <?= $i ?></div>
                     <?php endif; ?>
-                    <input type="file" name="foto_<?= (int)$cp['id'] ?>_<?= $i ?>" accept="image/*">
+                    <input type="file" name="foto_<?= (int)$cp['id'] ?>_<?= $i ?>" accept="image/*" <?= $canEdit ? '' : 'disabled' ?>>
                     <label>Keterangan foto <?= $i ?></label>
                     <input type="text" name="foto_<?= (int)$cp['id'] ?>_<?= $i ?>_ket"
-                           value="<?= e($f['keterangan'] ?? '') ?>" placeholder="mis. sedang bermain balok">
+                           value="<?= e($f['keterangan'] ?? '') ?>" placeholder="mis. sedang bermain balok" <?= $canEdit ? '' : 'disabled' ?>>
                 </div>
                 <?php endfor; ?>
             </div>
@@ -139,8 +181,10 @@ foreach ($st->fetchAll() as $r) $fotos[(int)$r['cp_id']][(int)$r['urutan']] = $r
     <?php endforeach; ?>
 
     <div class="form-actions" style="margin-bottom:24px;">
+        <?php if ($canEdit): ?>
         <button type="button" class="btn btn-primary" id="btnSimpanFoto">Simpan Semua Foto</button>
         <span id="fotoStatus" class="muted" style="font-size:13px; margin-left:8px;"></span>
+        <?php endif; ?>
         <a class="btn" href="index.php?route=penilaian&anak_id=<?= $anakId ?>">← Kembali ke Penilaian</a>
         <a class="btn" href="index.php?route=cetak">Lanjut: Cetak →</a>
     </div>
@@ -161,7 +205,8 @@ function submitDel(cp, u) {
 }
 
 // Simpan langsung selesai — tanpa loading, upload diproses di belakang
-document.getElementById('btnSimpanFoto').addEventListener('click', function () {
+var btnSimpanFoto = document.getElementById('btnSimpanFoto');
+if (btnSimpanFoto) btnSimpanFoto.addEventListener('click', function () {
     var form = this.closest('form');
     var status = document.getElementById('fotoStatus');
     var fd = new FormData(form);

@@ -2,11 +2,12 @@
 require_once __DIR__ . '/layout.php';
 page_header('Dashboard', 'dashboard');
 
-$jumlahAnak = (int)$db->query('SELECT COUNT(*) c FROM anak')->fetch()['c'];
+$scope = anakScope($db);
+$jumlahAnak = (int)$db->query('SELECT COUNT(*) c FROM anak a WHERE ' . $scope['where'])->fetch()['c'];
 $jumlahCp = (int)$db->query('SELECT COUNT(*) c FROM cp')->fetch()['c'];
 $jumlahCapaian = (int)$db->query('SELECT COUNT(*) c FROM capaian')->fetch()['c'];
-$tercentang = (int)$db->query('SELECT COUNT(*) c FROM penilaian')->fetch()['c'];
-$foto = (int)$db->query('SELECT COUNT(*) c FROM foto WHERE file != ""')->fetch()['c'];
+$tercentang = (int)$db->query('SELECT COUNT(*) c FROM penilaian p JOIN anak a ON a.id = p.anak_id WHERE ' . $scope['where'])->fetch()['c'];
+$foto = (int)$db->query('SELECT COUNT(*) c FROM foto f JOIN anak a ON a.id = f.anak_id WHERE ' . $scope['where'] . ' AND f.file != ""')->fetch()['c'];
 $profil = getProfil($db);
 ?>
 <div class="cards">

@@ -29,6 +29,8 @@ if ($route === 'logout') {
 }
 
 requireLogin();
+require_once __DIR__ . '/src/authz.php';
+authz_guard($db);
 
 // Routes terproteksi
 switch ($route) {
@@ -55,16 +57,34 @@ switch ($route) {
     case 'anak_delete':
         if ($method === 'POST') {
             $id = (int)($_POST['id'] ?? 0);
-            $st = $db->prepare('SELECT foto FROM anak WHERE id = ?');
+            if (!canEditAnak($db, $id)) {
+                flash('Anda tidak punya akses menghapus data anak ini.', 'error');
+                redirect('index.php?route=anak');
+            }
+            $st = $db->prepare('SELECT foto, nama_lengkap FROM anak WHERE id = ?');
             $st->execute([$id]);
             $row = $st->fetch();
             if ($row) {
                 deleteUpload($row['foto']);
                 $db->prepare('DELETE FROM anak WHERE id = ?')->execute([$id]);
+                logRevisi($db, 0, 'anak', (string)$id, 'hapus',
+                    'Data anak "' . $row['nama_lengkap'] . '" dihapus');
                 flash('Data anak dihapus.');
             }
         }
         redirect('index.php?route=anak');
+        break;
+
+    case 'anak_share':
+        require __DIR__ . '/views/anak_share.php';
+        break;
+
+    case 'users':
+        require __DIR__ . '/views/users.php';
+        break;
+
+    case 'revisi':
+        require __DIR__ . '/views/revisi.php';
         break;
 
     case 'capaian':

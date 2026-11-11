@@ -109,11 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['file']['name'])) {
             $ok = 0;
             $errors = [];
             $ins = $db->prepare(
-                'INSERT INTO anak (nama_lengkap, nama_panggilan, nisn, tempat_lahir, tanggal_lahir,
+                'INSERT INTO anak (user_id, nama_lengkap, nama_panggilan, nisn, tempat_lahir, tanggal_lahir,
                    jenis_kelamin, agama, anak_ke, jumlah_saudara, kelompok,
                    nama_ayah, pekerjaan_ayah, nama_ibu, pekerjaan_ibu, nama_wali,
                    alamat_jalan, alamat_rt_rw, alamat_desa, alamat_kecamatan, alamat_kabupaten, alamat_provinsi)
-                 VALUES (' . implode(',', array_fill(0, 21, '?')) . ')'
+                 VALUES (' . implode(',', array_fill(0, 22, '?')) . ')'
             );
 
             foreach (array_slice($rows, $start) as $idx => $line) {
@@ -132,13 +132,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['file']['name'])) {
                     $errors[] = 'Baris ' . ($idx + $start + 1) . ': nama lengkap kosong — dilewati.';
                     continue;
                 }
-                $params = array_map(fn($f) => $data[$f] ?? '', $fields);
+                $params = array_merge([currentUserId($db)], array_map(fn($f) => $data[$f] ?? '', $fields));
                 $ins->execute($params);
                 $ok++;
             }
 
             $result = ['ok' => $ok, 'errors' => $errors];
-            if ($ok > 0) flash("$ok data anak berhasil diimport.");
+            if ($ok > 0) {
+                logRevisi($db, 0, 'anak', '', 'tambah', "Import $ok data anak dari file " . basename($file['name']));
+                flash("$ok data anak berhasil diimport.");
+            }
         }
     }
 }
