@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Logo Laporan Perkembangan PAUD">
+  <defs>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a7a45"/>
+      <stop offset="55%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#0f5c32"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f6d56a"/>
+      <stop offset="50%" stop-color="#e8b923"/>
+      <stop offset="100%" stop-color="#c9950a"/>
+    </linearGradient>
+    <linearGradient id="page" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f3f7f4"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#e8f7ee"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- cincin luar -->
+  <circle cx="64" cy="64" r="60" fill="url(#ring)"/>
+  <circle cx="64" cy="64" r="54" fill="#ffffff"/>
+  <circle cx="64" cy="64" r="50" fill="url(#glow)"/>
+
+  <!-- bunga / bintang emas kecil di atas -->
+  <g transform="translate(64 28)">
+    <path d="M0-10 C2.2-4.5 4.5-2.2 10 0 C4.5 2.2 2.2 4.5 0 10 C-2.2 4.5-4.5 2.2-10 0 C-4.5-2.2-2.2-4.5 0-10Z" fill="url(#gold)"/>
+    <circle cx="0" cy="0" r="2.4" fill="#fff7d6"/>
+  </g>
+
+  <!-- buku terbuka -->
+  <g transform="translate(64 70)">
+    <!-- halaman kiri -->
+    <path d="M0-18 C-10-24 -24-24 -34-18 L-34 14 C-24 8 -10 8 0 14 Z" fill="url(#page)" stroke="#15803d" stroke-width="2.4" stroke-linejoin="round"/>
+    <!-- halaman kanan -->
+    <path d="M0-18 C10-24 24-24 34-18 L34 14 C24 8 10 8 0 14 Z" fill="url(#page)" stroke="#15803d" stroke-width="2.4" stroke-linejoin="round"/>
+    <!-- garis teks -->
+    <path d="M-24-8 H-8 M-24 0 H-10 M-24 8 H-14" stroke="#8fbfa3" stroke-width="2" stroke-linecap="round"/>
+    <path d="M24-8 H8 M24 0 H10 M24 8 H14" stroke="#8fbfa3" stroke-width="2" stroke-linecap="round"/>
+    <!-- punggung buku -->
+    <path d="M0-18 V14" stroke="#0f5c32" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+
+  <!-- mahkota lulus kecil (anak didik) -->
+  <g transform="translate(64 48)">
+    <path d="M-14 6 L-16-6 L-8 0 L0-10 L8 0 L16-6 L14 6 Z" fill="url(#gold)" stroke="#a67c00" stroke-width="1"/>
+    <rect x="-14" y="6" width="28" height="4" rx="1.5" fill="#c9950a"/>
+  </g>
+</svg>

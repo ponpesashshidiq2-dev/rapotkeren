@@ -97,7 +97,7 @@ $available = $st->fetchAll();
         <select name="user_id" required>
             <option value="">— pilih user —</option>
             <?php foreach ($available as $u): ?>
-            <option value="<?= (int)$u['id'] ?>"><?= e($u['username']) ?> (<?= e($u['role'] === 'admin' ? 'admin' : 'guru') ?>)</option>
+                <option value="<?= (int)$u['id'] ?>"><?= e($u['username']) ?> (<?= e(roleLabel($u['role'])) ?>)</option>
             <?php endforeach; ?>
         </select>
         <label>Peran:</label>

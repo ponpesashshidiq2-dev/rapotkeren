@@ -14,10 +14,16 @@ function authz_user(PDO $db): ?array {
     return $cache;
 }
 
-// Panggil sekali setelah requireLogin(): pastikan akun di sesi masih ada
+// Panggil sekali setelah requireLogin(): pastikan akun di sesi masih ada & aktif
 function authz_guard(PDO $db): void {
     if (!isLoggedIn()) return;
-    if (!authz_user($db)) {
+    $u = authz_user($db);
+    if (!$u) {
+        session_destroy();
+        redirect('index.php?route=login');
+    }
+    // Akun dinonaktifkan oleh admin → paksa keluar
+    if (($u['status'] ?? 'active') !== 'active') {
         session_destroy();
         redirect('index.php?route=login');
     }
@@ -32,9 +38,57 @@ function currentUserId(PDO $db): int {
     return $u ? (int)$u['id'] : 0;
 }
 
-function isAdmin(PDO $db): bool {
+// Peran: super_admin > admin > guru
+function userRole(PDO $db): string {
     $u = authz_user($db);
-    return $u && (($u['role'] ?? '') === 'admin');
+    return $u ? (string)($u['role'] ?? 'guru') : '';
+}
+
+function isSuperAdmin(PDO $db): bool {
+    return userRole($db) === 'super_admin';
+}
+
+function isAdmin(PDO $db): bool {
+    $r = userRole($db);
+    return $r === 'admin' || $r === 'super_admin';
+}
+
+/**
+ * Middleware: tolak akses bila peran user di sesi bukan termasuk $roles.
+ * Panggil SETELAH requireLogin() + authz_guard($db). Contoh:
+ *   requireRole($db, ['super_admin']);
+ *   requireRole($db, ['super_admin', 'admin']);
+ */
+function requireRole(PDO $db, array $roles): void {
+    if (!isLoggedIn()) redirect('index.php?route=login');
+    $r = userRole($db);
+    if (!in_array($r, $roles, true)) {
+        flash('Anda tidak punya hak akses untuk halaman tersebut.', 'error');
+        redirect('index.php?route=dashboard');
+    }
+}
+
+// Cek peran minimum: super_admin > admin > guru
+function hasRoleAtLeast(PDO $db, string $minRole): bool {
+    $rank = ['guru' => 1, 'admin' => 2, 'super_admin' => 3];
+    $r = userRole($db);
+    return ($rank[$r] ?? 0) >= ($rank[$minRole] ?? 99);
+}
+
+/** Kuota anak per user (0 = tanpa batas). */
+function kuotaAnak(PDO $db): int {
+    $u = authz_user($db);
+    return $u ? max(0, (int)($u['kuota_anak'] ?? 0)) : 0;
+}
+
+/** Sisa kuota membuat anak; null = unlimited. */
+function sisaKuotaAnak(PDO $db): ?int {
+    $q = kuotaAnak($db);
+    if ($q <= 0) return null;
+    $uid = currentUserId($db);
+    $st = $db->prepare('SELECT COUNT(*) c FROM anak WHERE user_id = ?');
+    $st->execute([$uid]);
+    return max(0, $q - (int)$st->fetch()['c']);
 }
 
 // 'owner' | 'editor' | 'viewer' | null (tidak ada akses)
@@ -42,7 +96,7 @@ function anakAccess(PDO $db, int $anakId): ?string {
     if ($anakId <= 0) return null;
     $u = authz_user($db);
     if (!$u) return null;
-    if (($u['role'] ?? '') === 'admin') return 'owner';
+    if (isAdmin($db)) return 'owner';
 
     $st = $db->prepare('SELECT user_id FROM anak WHERE id = ?');
     $st->execute([$anakId]);
@@ -62,11 +116,11 @@ function canEditAnak(PDO $db, int $anakId): bool {
     return $a === 'owner' || $a === 'editor';
 }
 
-// Filter kueri daftar anak: admin = semua, guru = milik sendiri + yang dibagikan
+// Filter kueri daftar anak: admin/super_admin = semua, guru = milik sendiri + yang dibagikan
 // Kembalikan ['all'=>bool, 'where'=>string (pakai alias a), 'params'=>array]
 function anakScope(PDO $db): array {
     $u = authz_user($db);
-    if (!$u || ($u['role'] ?? '') === 'admin') {
+    if (!$u || isAdmin($db)) {
         return ['all' => true, 'where' => '1=1', 'params' => []];
     }
     $uid = (int)$u['id'];
@@ -108,4 +162,12 @@ function logRevisi(PDO $db, int $anakId, string $tabel, string $rowKey, string $
 
 function shareRoleLabel(string $role): string {
     return $role === 'viewer' ? 'Lihat saja' : 'Editor';
+}
+
+function roleLabel(string $role): string {
+    return match ($role) {
+        'super_admin' => 'Super Admin',
+        'admin'       => 'Admin',
+        default       => 'Guru',
+    };
 }

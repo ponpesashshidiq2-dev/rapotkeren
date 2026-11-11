@@ -1,12 +1,19 @@
 <?php
 require_once __DIR__ . '/layout.php';
 
+// Profil terisolasi per akun: id user SELALU dari sesi, tidak pernah dari request (anti-IDOR)
+$myId = currentUserId($db);
+if ($myId <= 0) {
+    redirect('index.php?route=login');
+}
+ensureProfil($db, $myId);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fields = ['npsn','nama_sekolah','status','jenjang','alamat','rt_rw','desa','kecamatan',
                'kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
                'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru',
                'kota','tanggal_raport'];
-    $curProfil = getProfil($db);
+    $curProfil = getProfil($db, $myId);
     $logo = $curProfil['logo'] ?? '';
     $backgroundRapot = $curProfil['background_rapot'] ?? '';
 
@@ -41,13 +48,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sql .= ", $f = ?";
         $params[] = trim($_POST[$f] ?? '');
     }
-    $sql .= ' WHERE id = 1';
+    // Scope update ke profil milik user di sesi saja
+    $sql .= ' WHERE user_id = ?';
+    $params[] = $myId;
     $db->prepare($sql)->execute($params);
     flash('Profil lembaga dan konfigurasi rapot berhasil diperbarui.');
     redirect('index.php?route=profil');
 }
 
-$profil = getProfil($db);
+$profil = getProfil($db, $myId);
+// Pastikan semua key ada agar form tidak error saat profil baru/kosong
+$profil = array_merge(array_fill_keys([
+    'logo','background_rapot','npsn','nama_sekolah','status','jenjang','alamat','rt_rw',
+    'desa','kecamatan','kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
+    'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru','kota','tanggal_raport',
+], ''), $profil);
 page_header('Profil Lembaga', 'profil');
 ?>
 

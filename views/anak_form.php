@@ -52,6 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         logRevisi($db, $id, 'anak', (string)$id, 'ubah', $ringkasan ?: 'Data anak disimpan tanpa perubahan');
         flash('Data anak diperbarui.');
     } else {
+        // Kuota resource per user (0 = tanpa batas) — tolak bila sudah penuh
+        $sisa = sisaKuotaAnak($db);
+        if ($sisa !== null && $sisa <= 0) {
+            flash('Kuota data anak Anda sudah penuh. Hubungi admin untuk menambah kuota.', 'error');
+            redirect('index.php?route=anak');
+        }
         $sql = 'INSERT INTO anak (foto, user_id, ' . implode(', ', $fields) . ')
                 VALUES (?, ?, ' . implode(', ', array_fill(0, count($fields), '?')) . ')';
         $params = array_merge([$foto, currentUserId($db)], array_map(fn($f) => $data[$f], $fields));

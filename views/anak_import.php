@@ -108,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['file']['name'])) {
 
             $ok = 0;
             $errors = [];
+            $sisa = sisaKuotaAnak($db); // null = tanpa batas
             $ins = $db->prepare(
                 'INSERT INTO anak (user_id, nama_lengkap, nama_panggilan, nisn, tempat_lahir, tanggal_lahir,
                    jenis_kelamin, agama, anak_ke, jumlah_saudara, kelompok,
@@ -117,6 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['file']['name'])) {
             );
 
             foreach (array_slice($rows, $start) as $idx => $line) {
+                if ($sisa !== null && $ok >= $sisa) {
+                    $errors[] = 'Kuota data anak penuh — sisa baris tidak diimport. Hubungi admin untuk menambah kuota.';
+                    break;
+                }
                 $data = [];
                 foreach ($map as $col => $field) {
                     $val = trim((string)($line[$col] ?? ''));

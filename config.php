@@ -82,9 +82,56 @@ function deleteUpload($relPath) {
     }
 }
 
-function getProfil($db) {
-    $row = $db->query('SELECT * FROM profil LIMIT 1')->fetch();
-    return $row ?: [];
+/**
+ * Ambil profil milik user tertentu (default: user di sesi login).
+ * - Anti-IDOR: selalu query by user_id dari sesi/bukan dari request.
+ * - Lazy create: bila user belum punya baris profil, buat default dulu.
+ * - Halaman login (belum ada sesi): kembalikan profil pertama untuk branding, atau [].
+ */
+function getProfil(PDO $db, ?int $userId = null): array {
+    static $cache = [];
+    if ($userId === null) {
+        $userId = 0;
+        if (!empty($_SESSION['user'])) {
+            $st = $db->prepare('SELECT id FROM users WHERE username = ?');
+            $st->execute([$_SESSION['user']]);
+            $row = $st->fetch();
+            if ($row) $userId = (int)$row['id'];
+        }
+    }
+
+    if ($userId > 0) {
+        if (isset($cache[$userId])) return $cache[$userId];
+        $st = $db->prepare('SELECT * FROM profil WHERE user_id = ?');
+        $st->execute([$userId]);
+        $row = $st->fetch();
+        if (!$row) {
+            // Lazy create baris profil kosong untuk user ini
+            try {
+                $db->prepare('INSERT INTO profil (user_id) VALUES (?)')->execute([$userId]);
+                $st->execute([$userId]);
+                $row = $st->fetch();
+            } catch (Exception $e) {
+                $row = null;
+            }
+        }
+        return $cache[$userId] = $row ?: [];
+    }
+
+    // Belum login (halaman login): branding dari profil pertama bila ada
+    if (array_key_exists('__public', $cache)) return $cache['__public'];
+    $row = $db->query('SELECT * FROM profil WHERE user_id > 0 ORDER BY user_id LIMIT 1')->fetch();
+    return $cache['__public'] = $row ?: [];
+}
+
+/** Pastikan user punya baris profil; kembalikan id profilnya. */
+function ensureProfil(PDO $db, int $userId): int {
+    $st = $db->prepare('SELECT id FROM profil WHERE user_id = ?');
+    $st->execute([$userId]);
+    $row = $st->fetch();
+    if ($row) return (int)$row['id'];
+    $db->prepare('INSERT INTO profil (user_id) VALUES (?)')->execute([$userId]);
+    return (int)$db->lastInsertId();
 }
 
 function flash($msg = null, $type = 'success') {

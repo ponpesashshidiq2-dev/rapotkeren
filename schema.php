@@ -5,22 +5,49 @@ $db->exec("CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    role TEXT DEFAULT 'guru'
+    role TEXT DEFAULT 'guru',
+    status TEXT DEFAULT 'active',
+    nama_lengkap TEXT DEFAULT '',
+    kuota_anak INTEGER DEFAULT 0
 )");
 
-// Migrasi: tambah kolom role (admin|guru) bila belum ada
+// Migrasi: tambah kolom role/status/nama/kuota bila belum ada
 try {
     $db->exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'guru'");
 } catch (Exception $e) {}
-$db->exec("UPDATE users SET role = 'admin' WHERE username = 'admin'");
-// Pastikan selalu ada minimal satu admin
-$adaAdmin = (int)$db->query("SELECT COUNT(*) c FROM users WHERE role = 'admin'")->fetch()['c'];
+try {
+    $db->exec("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'");
+} catch (Exception $e) {}
+try {
+    $db->exec("ALTER TABLE users ADD COLUMN nama_lengkap TEXT DEFAULT ''");
+} catch (Exception $e) {}
+try {
+    $db->exec("ALTER TABLE users ADD COLUMN kuota_anak INTEGER DEFAULT 0");
+} catch (Exception $e) {}
+
+// Username 'admin' minimal jadi admin (jangan turunkan super_admin)
+$db->exec("UPDATE users SET role = 'admin' WHERE username = 'admin' AND role = 'guru'");
+// Pastikan selalu ada minimal satu admin (admin atau super_admin)
+$adaAdmin = (int)$db->query("SELECT COUNT(*) c FROM users WHERE role IN ('admin','super_admin')")->fetch()['c'];
 if ($adaAdmin === 0) {
     $db->exec("UPDATE users SET role = 'admin' WHERE id = (SELECT MIN(id) FROM users)");
 }
+// Pastikan selalu ada minimal satu super_admin (promosikan admin tertua bila belum ada)
+$adaSuper = (int)$db->query("SELECT COUNT(*) c FROM users WHERE role = 'super_admin'")->fetch()['c'];
+if ($adaSuper === 0) {
+    $db->exec("UPDATE users SET role = 'super_admin'
+               WHERE id = (SELECT MIN(id) FROM users WHERE role = 'admin')");
+    $adaSuper = (int)$db->query("SELECT COUNT(*) c FROM users WHERE role = 'super_admin'")->fetch()['c'];
+    if ($adaSuper === 0) {
+        $db->exec("UPDATE users SET role = 'super_admin' WHERE id = (SELECT MIN(id) FROM users)");
+    }
+}
 
+// ---- Profil multi-user: satu baris profil per user (user_id UNIQUE) ----
+// Skema baru untuk install segar (tanpa CHECK id=1, dengan relasi user_id)
 $db->exec("CREATE TABLE IF NOT EXISTS profil (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 0,
     logo TEXT DEFAULT '',
     background_rapot TEXT DEFAULT '',
     npsn TEXT DEFAULT '',
@@ -40,9 +67,18 @@ $db->exec("CREATE TABLE IF NOT EXISTS profil (
     guru_kelompok TEXT DEFAULT '',
     tahun_ajaran TEXT DEFAULT '',
     semester TEXT DEFAULT '',
-    footer TEXT DEFAULT 'SAHABAT GURU'
+    footer TEXT DEFAULT 'SAHABAT GURU',
+    nip_kepala TEXT DEFAULT '',
+    nip_guru TEXT DEFAULT '',
+    kota TEXT DEFAULT '',
+    tanggal_raport TEXT DEFAULT '',
+    refleksi_q1 TEXT DEFAULT '',
+    refleksi_q2 TEXT DEFAULT '',
+    refleksi_q3 TEXT DEFAULT '',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 )");
 
+// Migrasi kolom tambahan pada tabel lama (sebelum rebuild multi-user)
 try {
     $db->exec("ALTER TABLE profil ADD COLUMN background_rapot TEXT DEFAULT ''");
 } catch (Exception $e) {}
@@ -60,6 +96,52 @@ try {
     $db->exec("ALTER TABLE profil ADD COLUMN refleksi_q3 TEXT DEFAULT ''");
 } catch (Exception $e) {}
 
+// Rebuild tabel profil lama (CHECK id=1 → multi-user dengan user_id)
+$profilHasUserId = false;
+foreach ($db->query('PRAGMA table_info(profil)') as $c) {
+    if ($c['name'] === 'user_id') { $profilHasUserId = true; break; }
+}
+if (!$profilHasUserId) {
+    $oldCols = [];
+    foreach ($db->query('PRAGMA table_info(profil)') as $c) {
+        if ($c['name'] !== 'id') $oldCols[] = $c['name'];
+    }
+    // FK dimatikan sementara: baris lama masih user_id=0 (belum ada di users)
+    $db->exec('PRAGMA foreign_keys = OFF');
+    $db->exec('BEGIN');
+    $db->exec('CREATE TABLE profil_multi (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL DEFAULT 0' .
+        ($oldCols ? ', ' . implode(', ', array_map(fn($c) => '"' . $c . '" TEXT DEFAULT \'\'', $oldCols)) : '') .
+        ', FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )');
+    if ($oldCols) {
+        $colList = implode(', ', array_map(fn($c) => '"' . $c . '"', $oldCols));
+        $db->exec("INSERT INTO profil_multi (user_id, $colList) SELECT 0, $colList FROM profil");
+    }
+    $db->exec('DROP TABLE profil');
+    $db->exec('ALTER TABLE profil_multi RENAME TO profil');
+    $db->exec('COMMIT');
+    $db->exec('PRAGMA foreign_keys = ON');
+}
+// Unik parsial: satu profil per user (baris legacy user_id=0 diizinkan sementara)
+$db->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_profil_user ON profil(user_id) WHERE user_id > 0');
+
+// Baris profil lama (user_id=0) dialihkan ke admin pertama yang belum punya profil
+foreach ($db->query('SELECT id FROM profil WHERE user_id = 0 OR user_id IS NULL')->fetchAll() as $orphan) {
+    $st = $db->query("SELECT MIN(id) AS mid FROM users u
+                      WHERE NOT EXISTS (SELECT 1 FROM profil p WHERE p.user_id = u.id)");
+    $target = $st->fetch();
+    if ($target && $target['mid'] !== null) {
+        $db->prepare('UPDATE profil SET user_id = ? WHERE id = ?')
+           ->execute([(int)$target['mid'], (int)$orphan['id']]);
+    }
+}
+// Buat profil kosong untuk setiap user yang belum punya
+$db->exec("INSERT INTO profil (user_id)
+           SELECT u.id FROM users u
+           WHERE NOT EXISTS (SELECT 1 FROM profil p WHERE p.user_id = u.id)");
+
 // Daftar pertanyaan refleksi global (bisa tambah/hapus)
 $db->exec("CREATE TABLE IF NOT EXISTS refleksi_pertanyaan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,7 +151,9 @@ $db->exec("CREATE TABLE IF NOT EXISTS refleksi_pertanyaan (
 $cntQ = (int)$db->query('SELECT COUNT(*) c FROM refleksi_pertanyaan')->fetch()['c'];
 if ($cntQ === 0) {
     // Migrasi dari kolom profil lama / anak lama / default
-    $old = $db->query("SELECT refleksi_q1 q1, refleksi_q2 q2, refleksi_q3 q3 FROM profil WHERE id=1")->fetch();
+    $old = $db->query("SELECT refleksi_q1 q1, refleksi_q2 q2, refleksi_q3 q3 FROM profil
+                       WHERE refleksi_q1 != '' OR refleksi_q2 != '' OR refleksi_q3 != ''
+                       ORDER BY user_id LIMIT 1")->fetch();
     $defs = [
         trim($old['q1'] ?? '') ?: 'Perubahan positif apa yang sudah ada pada Ananda selama semester ini?',
         trim($old['q2'] ?? '') ?: 'Pendampingan/dukungan apa yang sudah Bapak/Ibu lakukan kepada Ananda selama semester ini?',
@@ -247,14 +331,23 @@ if (!$adaAik->fetch()) {
 $cnt = (int)$db->query('SELECT COUNT(*) c FROM users')->fetch()['c'];
 if ($cnt === 0) {
     $db->prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)')
-       ->execute(['admin', password_hash('admin123', PASSWORD_DEFAULT), 'admin']);
+       ->execute(['admin', password_hash('admin123', PASSWORD_DEFAULT), 'super_admin']);
 }
 
+// Seed profil contoh untuk super_admin bila belum ada profil sama sekali
 $cnt = (int)$db->query('SELECT COUNT(*) c FROM profil')->fetch()['c'];
 if ($cnt === 0) {
-    $db->exec("INSERT INTO profil (id, nama_sekolah, jenjang, status, footer, tahun_ajaran, semester)
-               VALUES (1, 'TK ISLAM ASSHIDIQ', 'TK', 'Swasta', 'SAHABAT GURU', '2025/2026', 'Ganjil')");
+    $adminId = (int)$db->query("SELECT MIN(id) AS mid FROM users WHERE role IN ('admin','super_admin')")->fetch()['mid'];
+    if ($adminId > 0) {
+        $db->prepare("INSERT INTO profil (user_id, nama_sekolah, jenjang, status, footer, tahun_ajaran, semester)
+                      VALUES (?, 'TK ISLAM ASSHIDIQ', 'TK', 'Swasta', 'SAHABAT GURU', '2025/2026', 'Ganjil')")
+           ->execute([$adminId]);
+    }
 }
+// Pastikan setiap user punya baris profil (termasuk user yang baru dibuat setelah seed)
+$db->exec("INSERT INTO profil (user_id)
+           SELECT u.id FROM users u
+           WHERE NOT EXISTS (SELECT 1 FROM profil p WHERE p.user_id = u.id)");
 
 $cnt = (int)$db->query('SELECT COUNT(*) c FROM cp')->fetch()['c'];
 if ($cnt === 0) {

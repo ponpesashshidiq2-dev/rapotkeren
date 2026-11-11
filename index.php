@@ -14,10 +14,16 @@ if ($route === 'login') {
         $st->execute([$u]);
         $user = $st->fetch();
         if ($user && password_verify($p, $user['password'])) {
-            $_SESSION['user'] = $user['username'];
-            redirect('index.php');
+            // Tolak login bila akun dinonaktifkan
+            if (($user['status'] ?? 'active') !== 'active') {
+                $error = 'Akun Anda dinonaktifkan. Hubungi administrator.';
+            } else {
+                $_SESSION['user'] = $user['username'];
+                redirect('index.php');
+            }
+        } else {
+            $error = 'Username atau password salah.';
         }
-        $error = 'Username atau password salah.';
     }
     require __DIR__ . '/views/login.php';
     exit;
@@ -80,6 +86,7 @@ switch ($route) {
         break;
 
     case 'users':
+        requireRole($db, ['super_admin', 'admin']);
         require __DIR__ . '/views/users.php';
         break;
 
