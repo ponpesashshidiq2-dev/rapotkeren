@@ -95,6 +95,10 @@ switch ($route) {
         require __DIR__ . '/views/cetak_print.php';
         break;
 
+    case 'backup':
+        require __DIR__ . '/views/backup.php';
+        break;
+
     default:
         require __DIR__ . '/views/dashboard.php';
 }
