@@ -73,10 +73,10 @@ $profil = getProfil($db);
         <li>Kelola daftar anak pada menu <strong><a href="index.php?route=anak">Data Anak</a></strong> (bisa input manual atau import file Excel/CSV).</li>
         <li>Tinjau dan sesuaikan <strong><a href="index.php?route=capaian">Data Capaian</a></strong> — per sub-bidang & capaian indikator (bisa ditambah/diubah).</li>
         <li>Buka menu <strong><a href="index.php?route=penilaian">Penilaian</a></strong> — beri <strong>skor 1–4</strong> untuk tiap capaian (deskripsi otomatis terisi dengan frasa predikat & bisa diedit manual).</li>
-        <li>Buka menu <strong><a href="index.php?route=foto">Foto Kegiatan</a></strong> — unggah 2 foto per lembar CP (AIK, Jati Diri &amp; Literasi terbagi 2 lembar = 4 foto).</li>
+        <li>Buka menu <strong><a href="index.php?route=foto">Foto Kegiatan</a></strong> — unggah 2 foto per CP (portrait; pada Jati Diri &amp; Literasi foto tampil di lembar 2).</li>
         <li>Buka menu <strong><a href="index.php?route=refleksi">Refleksi Orang Tua</a></strong> — kelola daftar pertanyaan (tambah/hapus, berlaku semua anak).</li>
         <li>Buka menu <strong><a href="index.php?route=pertumbuhan">Pertumbuhan &amp; Kehadiran</a></strong> — isi data pertumbuhan &amp; rekap kehadiran per anak.</li>
-        <li>Buka <strong><a href="index.php?route=cetak">Cetak Raport</a></strong> — menghasilkan dokumen cetak A4 lengkap (Cover, Identitas Anak, 7 Lembar CP + Foto, Lembar Pengesahan).</li>
+        <li>Buka <strong><a href="index.php?route=cetak">Cetak Raport</a></strong> — menghasilkan dokumen cetak A4 lengkap (Cover, Identitas Anak, Lembar CP + Foto, Lembar Pengesahan).</li>
     </ol>
 </div>
 <?php page_footer(); ?>

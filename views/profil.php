@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fields = ['npsn','nama_sekolah','status','jenjang','alamat','rt_rw','desa','kecamatan',
                'kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
                'guru_kelompok','tahun_ajaran','semester','cover_note','nip_kepala','nip_guru',
-               'kota','tanggal_raport','nss'];
+               'kota','tanggal_raport','nss','tanggal_masuk'];
     $curProfil = getProfil($db, $myId);
     $logo = $curProfil['logo'] ?? '';
     $backgroundRapot = $curProfil['background_rapot'] ?? '';
@@ -64,7 +64,7 @@ $profil = array_merge(array_fill_keys([
     'logo','background_rapot','npsn','nama_sekolah','status','jenjang','alamat','rt_rw',
     'desa','kecamatan','kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
     'guru_kelompok','tahun_ajaran','semester','cover_note','nip_kepala','nip_guru','kota','tanggal_raport',
-    'nss','hide_aik',
+    'nss','hide_aik','tanggal_masuk',
 ], ''), $profil);
 page_header('Profil Lembaga', 'profil');
 ?>
@@ -168,7 +168,7 @@ page_header('Profil Lembaga', 'profil');
                 <div class="upload-title">Gambar Background / Template Bingkai Rapot</div>
                 <p class="upload-desc">
                     Unggah gambar bingkai/kop resmi sekolah dalam format JPG atau PNG (orientasi Portrait A4, rasio 1:1.414).<br>
-                    Jika diunggah, gambar ini otomatis menjadi latar belakang di seluruh lembar cetak rapot (Cover, Biodata, Halaman CP, dan Pengesahan).
+                    Jika diunggah, gambar ini menjadi latar belakang halaman <strong>isi raport (CP, Refleksi, Pertumbuhan &amp; Pengesahan)</strong> — cover dan biodata tetap memakai bingkai bawaan.
                 </p>
                 <div class="upload-btn-wrap">
                     <label class="btn btn-outline file-btn" for="bgInput">
@@ -278,6 +278,10 @@ page_header('Profil Lembaga', 'profil');
             <div class="form-group">
                 <label for="tanggal_raport">Tanggal Raport</label>
                 <input type="date" id="tanggal_raport" name="tanggal_raport" value="<?= e($profil['tanggal_raport'] ?? '') ?>">
+            </div>
+            <div class="form-group">
+                <label for="tanggal_masuk">Tanggal Masuk Awal (Biodata Anak)</label>
+                <input type="date" id="tanggal_masuk" name="tanggal_masuk" value="<?= e($profil['tanggal_masuk'] ?? '') ?>">
             </div>
             <div class="form-group col-span-3">
                 <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">

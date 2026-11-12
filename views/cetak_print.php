@@ -78,17 +78,11 @@ function tanggalIndo($tgl = null) {
     return $d->format('j') . ' ' . $bulan[(int)$d->format('n')] . ' ' . $d->format('Y');
 }
 
-if (!function_exists('isAikCp')) {
-    function isAikCp($namaCp) {
-        $n = strtolower($namaCp);
-        return (strpos($n, 'al islam') !== false) || (strpos($n, 'kemuhammadiyahan') !== false);
-    }
-}
-
+// Split 2 lembar saat cetak: hanya Jati Diri & Literasi (AIK cukup 1 lembar)
 if (!function_exists('isSplitCp')) {
     function isSplitCp($namaCp) {
         $n = strtolower($namaCp);
-        return (strpos($n, 'jati diri') !== false) || (strpos($n, 'literasi') !== false) || isAikCp($namaCp);
+        return (strpos($n, 'jati diri') !== false) || (strpos($n, 'literasi') !== false);
     }
 }
 
@@ -108,19 +102,20 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 <link rel="stylesheet" href="assets/print.css">
 <?php if (!empty($profil['background_rapot']) && file_exists(BASE_DIR . '/' . $profil['background_rapot'])): ?>
 <style>
-.page {
+/* Background hanya untuk halaman isi — cover & biodata tetap bingkai bawaan */
+.page:not(.page-cover-official):not(.page-biodata) {
     background-image: url('<?= e($profil['background_rapot']) ?>') !important;
     background-size: 100% 100% !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
 }
-.page-inner {
+.page:not(.page-cover-official):not(.page-biodata) .page-inner {
     border: none !important;
     background: transparent !important;
     box-shadow: none !important;
 }
-.page-inner::before,
-.page-inner::after {
+.page:not(.page-cover-official):not(.page-biodata) .page-inner::before,
+.page:not(.page-cover-official):not(.page-biodata) .page-inner::after {
     display: none !important;
 }
 </style>
@@ -206,6 +201,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 'Anak ke-' => $anak['anak_ke'] ?: '-',
                 'Jumlah saudara' => $anak['jumlah_saudara'] ?: '-',
                 'Kelompok / rombel' => $anak['kelompok'] ?: '-',
+                'Tanggal masuk' => !empty($profil['tanggal_masuk']) ? tanggalIndo($profil['tanggal_masuk']) : '-',
             ];
             foreach ($rows as $label => $val): ?>
             <tr><td class="lbl"><?= e($label) ?></td><td class="colon">:</td><td><?= e($val) ?></td></tr>
@@ -280,21 +276,16 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
     foreach ($st->fetchAll() as $r) $fotos[(int)$r['urutan']] = $r;
 
     $split = isSplitCp($cp['nama']);
-    if ($split && isAikCp($cp['nama'])) {
-        // AIK: 2 lembar — judul tetap nama CP utuh di kedua lembar
+    if ($split) {
+        // Jati Diri / Literasi: 2 lembar — L1: 3 sub-CP tanpa foto; L2: sisa sub-CP + foto 1&2
         $pages = [
-            ['subs' => array_slice($subs, 0, 2), 'foto_start' => 1],
-            ['subs' => array_slice($subs, 2),    'foto_start' => 3],
-        ];
-    } elseif ($split) {
-        // Jati Diri / Literasi: 2 halaman, masing-masing tetap 2 foto (lembar 1: foto 1&2, lembar 2: foto 3&4)
-        $pages = [
-            ['title_suffix' => ' (BAGIAN 1)', 'subs' => array_slice($subs, 0, 3), 'foto_start' => 1],
-            ['title_suffix' => ' (BAGIAN 2)', 'subs' => array_slice($subs, 3),    'foto_start' => 3],
+            ['title_suffix' => ' (BAGIAN 1)', 'subs' => array_slice($subs, 0, 3), 'show_foto' => false],
+            ['title_suffix' => ' (BAGIAN 2)', 'subs' => array_slice($subs, 3),    'show_foto' => true, 'foto_start' => 1],
         ];
     } else {
+        // Semua CP lain (termasuk AIK): 1 lembar — semua sub-CP + foto 1&2
         $pages = [
-            ['title_suffix' => '', 'subs' => $subs, 'foto_start' => 1],
+            ['title_suffix' => '', 'subs' => $subs, 'show_foto' => true, 'foto_start' => 1],
         ];
     }
     ?>
@@ -341,9 +332,9 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             </div>
             <?php endforeach; ?>
 
+            <?php if (!empty($pInfo['show_foto'])): ?>
             <h3 class="doc-title">✿ DOKUMENTASI KEGIATAN ANAK ✿</h3>
-            <!-- Selalu 2 foto per lembar (lembar split lanjutan: foto 3&4) -->
-            <?php $fs = $pInfo['foto_start']; ?>
+            <?php $fs = $pInfo['foto_start'] ?? 1; ?>
             <div class="foto-row">
                 <?php for ($i = $fs; $i < $fs + 2; $i++): $f = $fotos[$i] ?? null; ?>
                 <div class="foto-cell">
@@ -354,10 +345,10 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                             <span class="muted-print">Foto Kegiatan <?= $i ?></span>
                         <?php endif; ?>
                     </div>
-                    <div class="foto-ket"><strong>Keterangan:</strong> <?= e($f['keterangan'] ?? '-') ?></div>
                 </div>
                 <?php endfor; ?>
             </div>
+            <?php endif; ?>
         </div>
     </section>
     <?php endforeach; ?>

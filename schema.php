@@ -78,6 +78,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS profil (
     nss TEXT DEFAULT '',
     hide_aik INTEGER NOT NULL DEFAULT 0,
     cover_note TEXT DEFAULT 'Nama Peserta Didik',
+    tanggal_masuk TEXT DEFAULT '',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 )");
 
@@ -97,6 +98,9 @@ try {
 } catch (Exception $e) {}
 try {
     $db->exec("ALTER TABLE profil ADD COLUMN cover_note TEXT DEFAULT 'Nama Peserta Didik'");
+} catch (Exception $e) {}
+try {
+    $db->exec("ALTER TABLE profil ADD COLUMN tanggal_masuk TEXT DEFAULT ''");
 } catch (Exception $e) {}
 try {
     $db->exec("ALTER TABLE profil ADD COLUMN kota TEXT DEFAULT ''");
@@ -545,3 +549,15 @@ $db->exec("CREATE TABLE IF NOT EXISTS revisi (
     created_at TEXT DEFAULT ''
 )");
 $db->exec('CREATE INDEX IF NOT EXISTS idx_revisi_anak ON revisi(anak_id)');
+
+// ---- Migrasi: hapus permanen foto kegiatan urutan 3 & 4 (format lama 4 foto per CP split) ----
+$oldFotos = $db->query('SELECT id, file FROM foto WHERE urutan IN (3, 4)')->fetchAll();
+if ($oldFotos) {
+    foreach ($oldFotos as $of) {
+        if (!empty($of['file'])) {
+            $p = BASE_DIR . '/' . $of['file'];
+            if (strpos($p, UPLOAD_DIR) === 0 && is_file($p)) @unlink($p);
+        }
+    }
+    $db->exec('DELETE FROM foto WHERE urutan IN (3, 4)');
+}

@@ -8,14 +8,6 @@ $st->execute($scope['params']);
 $anakList = $st->fetchAll();
 $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 
-function isSplitCpName(string $nama): bool {
-    $n = strtolower($nama);
-    return (strpos($n, 'jati diri') !== false)
-        || (strpos($n, 'literasi') !== false)
-        || (strpos($n, 'al islam') !== false)
-        || (strpos($n, 'kemuhammadiyahan') !== false);
-}
-
 function fotoDenied(bool $isAjax, int $anakId): void {
     if ($isAjax) {
         header('Content-Type: application/json; charset=utf-8');
@@ -38,10 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $anakId) {
     if ($act === 'simpan') {
         $log = [];
         foreach ($cps as $cp) {
-            $max = isSplitCpName($cp['nama']) ? 4 : 2; // split: 2 foto per lembar × 2 lembar
-            for ($urut = 1; $urut <= $max; $urut++) {
+            for ($urut = 1; $urut <= 2; $urut++) {
                 $field = 'foto_' . (int)$cp['id'] . '_' . $urut;
-                $ketField = $field . '_ket';
 
                 if (!empty($_FILES[$field]['name']) && $_FILES[$field]['error'] === UPLOAD_ERR_OK) {
                     $new = uploadFile($field, 'kegiatan');
@@ -55,11 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $anakId) {
                            ->execute([$anakId, (int)$cp['id'], $urut, $new]);
                         $log[] = 'foto ' . $urut . ' (' . authz_trunc($cp['nama'], 25) . ') diunggah';
                     }
-                }
-                $ket = trim($_POST[$ketField] ?? '');
-                if ($ket !== '') {
-                    $db->prepare('UPDATE foto SET keterangan = ? WHERE anak_id=? AND cp_id=? AND urutan=?')
-                       ->execute([$ket, $anakId, (int)$cp['id'], $urut]);
                 }
             }
         }
@@ -116,7 +101,7 @@ page_header('Upload Foto Kegiatan', 'foto');
         </option>
         <?php endforeach; ?>
     </select>
-    <span class="muted">2 foto kegiatan per lembar CP. Jati Diri & Literasi (2 lembar) = 4 foto.</span>
+    <span class="muted">2 foto kegiatan per CP (cetak 1 lembar; Jati Diri &amp; Literasi tetap 2 lembar — foto tampil di lembar 2).</span>
 </form>
 
 <?php if (!$anakList): ?>
@@ -136,28 +121,16 @@ foreach ($st->fetchAll() as $r) $fotos[(int)$r['cp_id']][(int)$r['urutan']] = $r
     <input type="hidden" name="act" value="simpan">
 
     <?php foreach ($cps as $cp): ?>
-    <?php
-        $split = isSplitCpName($cp['nama']);
-        $max = $split ? 4 : 2;
-        $perSheet = $split
-            ? [[1, 'Lembar 1 — Foto 1 & 2'], [3, 'Lembar 2 — Foto 3 & 4']]
-            : [[1, 'Foto 1 & 2']];
-    ?>
     <div class="panel">
         <div class="cp-section-head">
             <h3><?= e($cp['nama']) ?></h3>
-            <?php if ($split): ?>
-                <span class="badge badge-green">2 Lembar × 2 Foto = 4 Foto</span>
-            <?php else: ?>
-                <span class="badge">1 Lembar × 2 Foto</span>
-            <?php endif; ?>
+            <span class="badge">2 Foto per CP</span>
         </div>
 
-        <?php foreach ($perSheet as [$start, $label]): ?>
         <div class="sub-block">
-            <div class="sub-head"><strong><?= e($label) ?></strong></div>
+            <div class="sub-head"><strong>Foto 1 &amp; 2</strong></div>
             <div class="foto-grid">
-                <?php for ($i = $start; $i < $start + 2; $i++): $f = $fotos[(int)$cp['id']][$i] ?? null; ?>
+                <?php for ($i = 1; $i <= 2; $i++): $f = $fotos[(int)$cp['id']][$i] ?? null; ?>
                 <div class="foto-slot">
                     <?php if (!empty($f['file'])): ?>
                         <img src="<?= e($f['file']) ?>" alt="Foto <?= $i ?>">
@@ -169,14 +142,10 @@ foreach ($st->fetchAll() as $r) $fotos[(int)$r['cp_id']][(int)$r['urutan']] = $r
                         <div class="foto-empty">Foto <?= $i ?></div>
                     <?php endif; ?>
                     <input type="file" name="foto_<?= (int)$cp['id'] ?>_<?= $i ?>" accept="image/*,.heic,.heif" <?= $canEdit ? '' : 'disabled' ?>>
-                    <label>Keterangan foto <?= $i ?></label>
-                    <input type="text" name="foto_<?= (int)$cp['id'] ?>_<?= $i ?>_ket"
-                           value="<?= e($f['keterangan'] ?? '') ?>" placeholder="mis. sedang bermain balok" <?= $canEdit ? '' : 'disabled' ?>>
                 </div>
                 <?php endfor; ?>
             </div>
         </div>
-        <?php endforeach; ?>
     </div>
     <?php endforeach; ?>
 
