@@ -77,6 +77,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS profil (
     refleksi_q3 TEXT DEFAULT '',
     nss TEXT DEFAULT '',
     hide_aik INTEGER NOT NULL DEFAULT 0,
+    cover_note TEXT DEFAULT 'Nama Peserta Didik',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 )");
 
@@ -93,6 +94,9 @@ try {
 } catch (Exception $e) {}
 try {
     $db->exec("ALTER TABLE profil ADD COLUMN hide_aik INTEGER NOT NULL DEFAULT 0");
+} catch (Exception $e) {}
+try {
+    $db->exec("ALTER TABLE profil ADD COLUMN cover_note TEXT DEFAULT 'Nama Peserta Didik'");
 } catch (Exception $e) {}
 try {
     $db->exec("ALTER TABLE profil ADD COLUMN kota TEXT DEFAULT ''");

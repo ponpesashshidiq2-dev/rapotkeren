@@ -69,11 +69,6 @@ body {
     color: #187a46; font-weight: 700; margin-bottom: 7mm;
 }
 
-.footer {
-    position: absolute; left: 0; right: 0; bottom: 5mm;
-    text-align: center; font-size: 10px; color: #9aa7b1;
-}
-
 /* Cover */
 .cover-title {
     text-align: center; font-size: 21px; color: #0b3821; margin: 8mm 0 2mm;
@@ -125,10 +120,9 @@ body {
     font-size: 20px; font-weight: 800; color: #0b3821;
     letter-spacing: .5px; margin-top: 3mm; text-transform: uppercase;
 }
-.official-footer {
-    position: absolute; left: 0; right: 0; bottom: 12mm;
-    font-size: 12px; font-weight: 700; color: #0b3821;
-    line-height: 1.55; text-align: center;
+.official-child-note {
+    font-size: 13.5px; font-weight: 700; color: #187a46;
+    margin-top: 2mm; text-align: center;
 }
 
 .band {

@@ -52,11 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ($act === 'del_cp') {
-        $db->prepare('DELETE FROM cp WHERE id = ?')->execute([(int)$_POST['id']]);
-        flash('CP dihapus.');
-    }
-
     redirect('index.php?route=capaian');
 }
 
@@ -75,11 +70,6 @@ $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 <div class="panel">
     <div class="cp-head">
         <h2><?= e($cp['nama']) ?></h2>
-        <form method="post" onsubmit="return confirm('Hapus CP beserta semua sub-bidang & capaiannya?')">
-            <input type="hidden" name="act" value="del_cp">
-            <input type="hidden" name="id" value="<?= (int)$cp['id'] ?>">
-            <button class="btn btn-sm btn-danger">Hapus CP</button>
-        </form>
     </div>
 
     <?php

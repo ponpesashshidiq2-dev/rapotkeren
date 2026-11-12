@@ -11,7 +11,7 @@ ensureProfil($db, $myId);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fields = ['npsn','nama_sekolah','status','jenjang','alamat','rt_rw','desa','kecamatan',
                'kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
-               'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru',
+               'guru_kelompok','tahun_ajaran','semester','cover_note','nip_kepala','nip_guru',
                'kota','tanggal_raport','nss'];
     $curProfil = getProfil($db, $myId);
     $logo = $curProfil['logo'] ?? '';
@@ -63,7 +63,7 @@ $profil = getProfil($db, $myId);
 $profil = array_merge(array_fill_keys([
     'logo','background_rapot','npsn','nama_sekolah','status','jenjang','alamat','rt_rw',
     'desa','kecamatan','kabupaten','provinsi','kode_pos','telp','email','kepala_sekolah',
-    'guru_kelompok','tahun_ajaran','semester','footer','nip_kepala','nip_guru','kota','tanggal_raport',
+    'guru_kelompok','tahun_ajaran','semester','cover_note','nip_kepala','nip_guru','kota','tanggal_raport',
     'nss','hide_aik',
 ], ''), $profil);
 page_header('Profil Lembaga', 'profil');
@@ -268,8 +268,8 @@ page_header('Profil Lembaga', 'profil');
                 </div>
             </div>
             <div class="form-group">
-                <label for="footer">Teks Footer Cetak</label>
-                <input type="text" id="footer" name="footer" value="<?= e($profil['footer']) ?>" placeholder="Misal: SAHABAT GURU">
+                <label for="cover_note">Teks di Bawah Nama Anak (Cover)</label>
+                <input type="text" id="cover_note" name="cover_note" value="<?= e($profil['cover_note'] ?? '') ?>" placeholder="Misal: Nama Peserta Didik">
             </div>
             <div class="form-group">
                 <label for="kota">Kota (untuk tanggal cetak raport)</label>

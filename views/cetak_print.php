@@ -179,10 +179,9 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 
         <div class="official-child-label">Nama Anak Didik :</div>
         <div class="official-child-name"><?= e($anak['nama_lengkap']) ?></div>
-
-        <div class="official-footer">
-            <?= nl2br(e($profil['footer'] ?: 'SAHABAT GURU')) ?>
-        </div>
+        <?php if (!empty($profil['cover_note'])): ?>
+        <div class="official-child-note"><?= e($profil['cover_note']) ?></div>
+        <?php endif; ?>
     </div>
 </section>
 
@@ -261,7 +260,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
         </div>
 
         <div class="pemisah">- - - - - - Pemisah - - - - - -</div>
-        <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
     </div>
 </section>
 <?php endif; ?>
@@ -360,8 +358,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 </div>
                 <?php endfor; ?>
             </div>
-
-            <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
         </div>
     </section>
     <?php endforeach; ?>
@@ -398,8 +394,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 <?php endforeach; ?>
             </tbody>
         </table>
-
-        <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
     </div>
 </section>
 
@@ -474,8 +468,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             <div class="ttd-name-print"><strong><?= e($profil['kepala_sekolah'] ?: '') ?></strong></div>
             <div class="ttd-nip">NIP/NBM. <?= e($profil['nip_kepala'] ?: '........................') ?></div>
         </div>
-
-        <div class="footer"><?= e($profil['footer'] ?? 'SAHABAT GURU') ?></div>
     </div>
 </section>
 <?php endif; ?>
