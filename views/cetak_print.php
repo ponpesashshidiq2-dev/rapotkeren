@@ -176,8 +176,8 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 	<br>
 	<br>
 	<br>
- 	<div class="official-child-note">PIMPINAN PUSAT 'AISYIYAH :</div>
-	<div class="official-child-note">MAJELIS PENDIDIKAN ANAK USIA DINI, DASAR DAN MENENGAH :</div>
+ 	<div class="official-child-note">PIMPINAN PUSAT 'AISYIYAH </div>
+	<div class="official-child-note">MAJELIS PENDIDIKAN ANAK USIA DINI, DASAR DAN MENENGAH </div>
 
         <?php if (!empty($profil['cover_note'])): ?>
         <div class="official-child-note"><?= e($profil['cover_note']) ?></div>
@@ -250,7 +250,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 <?php endif; ?>
             </div>
             <div class="sign-right">
-                <div class="sign-date"><?= e($profil['kota'] ?: $profil['kabupaten'] ?: ($profil['desa'] ?: '..........................')) ?>, <?= !empty($profil['tanggal_raport']) ? tanggalIndo($profil['tanggal_raport']) : '....................................' ?></div>
+                <div class="sign-date"><?= e($profil['kota'] ?: $profil['kabupaten'] ?: ($profil['desa'] ?: '..........................')) ?>, <?= !empty($profil['tanggal_masuk']) ? tanggalIndo($profil['tanggal_masuk']) : '....................................' ?></div>
                 <div class="sign-label">
     Kepala <?= e($profil['nama_sekolah']) ?>
 </div>
