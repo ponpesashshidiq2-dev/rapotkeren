@@ -87,6 +87,10 @@ body {
 }
 
 /* Cover resmi (gaya: 1 logo + identitas + nama anak) */
+.page-cover-official .page-inner,
+.page-cover-official .page-inner * {
+    color: #000;
+}
 .page-cover-official .page-inner {
     display: flex;
     flex-direction: column;
