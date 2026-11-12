@@ -251,7 +251,7 @@ table.refleksi-tbl th {
 }
 table.refleksi-tbl td {
     font-size: 12.5px; padding: 3mm 4mm; border: 1px solid #c2e0cf;
-    color: #1e293b; vertical-align: top; background: #fafdfb;
+    color: #1e293b; vertical-align: top; background: transparent;
 }
 table.refleksi-tbl .refleksi-no {
     text-align: center; font-weight: 700; width: 8mm; vertical-align: top;
