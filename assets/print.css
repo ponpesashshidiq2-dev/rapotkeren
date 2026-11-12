@@ -264,6 +264,10 @@ table.refleksi-tbl .refleksi-no {
 .refleksi-lines span:last-child { margin-bottom: 0; }
 
 /* Lembar Pertumbuhan & Kehadiran */
+.page-pengesahan,
+.page-pengesahan * {
+    font-family: Arial, sans-serif !important;
+}
 .growth-title {
     text-align: center; font-size: 14px; font-weight: 800; color: #0f172a;
     margin-bottom: 5mm; letter-spacing: .2px;

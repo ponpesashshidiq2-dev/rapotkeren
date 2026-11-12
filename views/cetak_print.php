@@ -393,7 +393,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 </section>
 
 <!-- ============ LEMBAR PERTUMBUHAN, KEHADIRAN & PENGESAHAN ============ -->
-<section class="page">
+<section class="page page-pengesahan">
     <div class="page-inner">
         <div class="meta-simple">
             Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong>
