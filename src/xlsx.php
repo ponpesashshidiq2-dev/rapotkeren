@@ -94,3 +94,96 @@ function xlsx_serial_to_date($val): string {
     $ts = (int)round(($n - 25569) * 86400); // 25569 = hari 1970-01-01 sejak 1899-12-30
     return gmdate('Y-m-d', $ts);
 }
+
+/**
+ * Tulis array baris (array of array string) menjadi file XLSX valid.
+ * @param array $rows  [[col1, col2, ...], ...]
+ * @param array $colWidths  lebar kolom opsional (dalam character width)
+ * @return string|null  isi file XLSX (binary), null bila ZipArchive tidak ada
+ */
+function xlsx_write_rows(array $rows, array $colWidths = []): ?string {
+    if (!class_exists('ZipArchive')) return null;
+
+    $colName = function (int $i): string {
+        $s = '';
+        $i++;
+        while ($i > 0) {
+            $m = ($i - 1) % 26;
+            $s = chr(65 + $m) . $s;
+            $i = intdiv($i - 1, 26);
+        }
+        return $s;
+    };
+
+    $xmlEnc = fn(string $s): string => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+
+    // sheet XML
+    $sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
+    $sheet .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+    if ($colWidths) {
+        $sheet .= '<cols>';
+        foreach ($colWidths as $i => $w) {
+            $sheet .= '<col min="' . ($i + 1) . '" max="' . ($i + 1) . '" width="' . (float)$w . '" customWidth="1"/>';
+        }
+        $sheet .= '</cols>';
+    }
+    $sheet .= '<sheetData>';
+    foreach ($rows as $r => $row) {
+        $rn = $r + 1;
+        $sheet .= '<row r="' . $rn . '">';
+        foreach ($row as $c => $val) {
+            $ref = $colName($c) . $rn;
+            // tanggal Y-m-d → serial Excel agar diformat tanggal oleh Excel
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$val)) {
+                $ts = strtotime((string)$val . ' UTC');
+                $serial = (int)($ts / 86400) + 25569;
+                $sheet .= '<c r="' . $ref . '"><v>' . $serial . '</v></c>';
+            } elseif (is_numeric($val) && $val !== '' && !preg_match('/^0\d/', (string)$val)) {
+                $sheet .= '<c r="' . $ref . '"><v>' . $val . '</v></c>';
+            } else {
+                $sheet .= '<c r="' . $ref . '" t="inlineStr"><is><t xml:space="preserve">' . $xmlEnc((string)$val) . '</t></is></c>';
+            }
+        }
+        $sheet .= '</row>';
+    }
+    $sheet .= '</sheetData></worksheet>';
+
+    $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        . '<Default Extension="xml" ContentType="application/xml"/>'
+        . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        . '</Types>';
+
+    $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+        . '</Relationships>';
+
+    $workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        . '<sheets><sheet name="Template" sheetId="1" r:id="rId1"/></sheets>'
+        . '</workbook>';
+
+    $wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+        . '</Relationships>';
+
+    $tmp = tempnam(sys_get_temp_dir(), 'xlsx');
+    $zip = new ZipArchive();
+    if ($zip->open($tmp, ZipArchive::OVERWRITE) !== true) {
+        @unlink($tmp);
+        return null;
+    }
+    $zip->addFromString('[Content_Types].xml', $contentTypes);
+    $zip->addFromString('_rels/.rels', $rels);
+    $zip->addFromString('xl/workbook.xml', $workbook);
+    $zip->addFromString('xl/_rels/workbook.xml.rels', $wbRels);
+    $zip->addFromString('xl/worksheets/sheet1.xml', $sheet);
+    $zip->close();
+    $data = file_get_contents($tmp);
+    @unlink($tmp);
+    return $data ?: null;
+}
