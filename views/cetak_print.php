@@ -57,11 +57,13 @@ foreach ($st->fetchAll() as $r) $manual[(int)$r['sub_cp_id']] = $r['teks'];
 $panggilan = $anak['nama_panggilan'] ?: $anak['nama_lengkap'];
 
 if (!function_exists('usia')) {
-    function usia($tgl) {
+    // Usia dihitung dari tanggal lahir sampai tanggal raport (fallback: hari ini)
+    function usia($tgl, $refTgl = null) {
         if (!$tgl) return '-';
         try {
             $d = new DateTime($tgl);
-            $now = new DateTime();
+            $now = !empty($refTgl) ? new DateTime($refTgl) : new DateTime();
+            if ($now < $d) $now = new DateTime();
             $diff = $now->diff($d);
             if ($diff->y > 0) return $diff->y . ' tahun ' . $diff->m . ' bulan';
             return $diff->m . ' bulan';
@@ -201,10 +203,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 <!-- ============ 2. DATA PESERTA DIDIK (1 halaman A4) ============ -->
 <section class="page page-biodata">
     <div class="page-inner">
-        <div class="head-bar">✿ &nbsp; LAPORAN PERKEMBANGAN ANAK DIDIK &nbsp; ✿</div>
-
-        <h1 class="cover-title">✿ DATA PESERTA DIDIK ✿</h1>
-        <h2 class="cover-sub">KETERANGAN DIRI ANAK</h2>
+        <h1 class="cover-title">KETERANGAN DIRI ANAK DIDIK</h1>
 
         <div class="band band-pink">DATA ANAK</div>
         <table class="identitas">
@@ -266,9 +265,10 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 <div class="sign-date"><?= e($profil['kota'] ?: $profil['kabupaten'] ?: ($profil['desa'] ?: '..........................')) ?>, <?= !empty($profil['tanggal_masuk']) ? tanggalIndo($profil['tanggal_masuk']) : '....................................' ?></div>
                 <div class="sign-label">
     Kepala <?= e($profil['nama_sekolah']) ?>
+    <br><br>
 </div>
                 <div class="sign-space"></div>
-                <div class="sign-name"><strong>( <?= e($profil['kepala_sekolah'] ?: '................................................') ?> )</strong></div>
+                <div class="sign-name"><strong><?= e($profil['kepala_sekolah'] ?: '................................................') ?></strong></div>
             </div>
         </div>
 
@@ -320,7 +320,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                     <td class="m-lbl">Kelompok</td><td class="m-col">:</td><td class="m-val"><?= e($anak['kelompok'] ?: '-') ?></td>
                 </tr>
                 <tr>
-                    <td class="m-lbl">Usia</td><td class="m-col">:</td><td class="m-val"><?= e(usia($anak['tanggal_lahir'])) ?></td>
+                    <td class="m-lbl">Usia</td><td class="m-col">:</td><td class="m-val"><?= e(usia($anak['tanggal_lahir'], $profil['tanggal_raport'] ?? '')) ?></td>
                     <td class="m-lbl">Tahun Ajaran</td><td class="m-col">:</td><td class="m-val"><?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)</td>
                 </tr>
             </table>
@@ -474,7 +474,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 // Jika konten melebihi tinggi halaman, isi di-scale otomatis (transform) agar tidak meluber ke halaman berikutnya.
 (function () {
     var MM = 96 / 25.4;                 // px per mm (CSS)
-    var TARGET = 277 * MM - 2;          // tinggi maks page-inner (297mm - padding 10mm x2), sisa 2px jaga2
+    var TARGET = 277 * MM - 2;          // tinggi maks page-inner (297mm - margin 1cm x2 = 277mm), sisa 2px jaga2
 
     function fitPages() {
         var pages = document.querySelectorAll('.page');
