@@ -278,12 +278,12 @@ table.growth-tbl {
     margin-bottom: 8mm;
 }
 table.growth-tbl th {
-    background: #f1f5f9; color: #0f172a; font-size: 12.8px; font-weight: 700;
+    background: transparent; color: #0f172a; font-size: 12.8px; font-weight: 700;
     padding: 2.5mm 3mm; border: 1px solid #cbd5e1; text-align: left;
 }
 table.growth-tbl td {
     font-size: 12.5px; padding: 2.2mm 3mm; border: 1px solid #cbd5e1;
-    color: #1e293b;
+    color: #1e293b; background: transparent;
 }
 table.growth-tbl td:nth-child(odd) { font-weight: 600; width: 22%; }
 table.growth-tbl td:nth-child(even) { width: 28%; }
