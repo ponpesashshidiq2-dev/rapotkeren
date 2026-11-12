@@ -151,6 +151,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 
         <div class="official-kicker">LAPORAN</div>
         <div class="official-title">PERKEMBANGAN ANAK DIDIK</div>
+	<div class="official-title">TAMAN KANAK KANAK 'AISYIYAH BUSTANUL ATHFAL</div>
         <div class="official-school">
             <?= e(strtoupper(($profil['jenjang'] ? $profil['jenjang'] . ' ' : '') . ($profil['nama_sekolah'] ?: '..........................'))) ?>
         </div>
@@ -165,7 +166,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 'Desa/Kelurahan' => $profil['desa'] ?: '-',
                 'Kecamatan' => $profil['kecamatan'] ?: '-',
                 'Kabupaten' => $profil['kabupaten'] ?: '-',
-                'Propinsi' => $profil['provinsi'] ?: '-',
+                'Provinsi' => $profil['provinsi'] ?: '-',
             ];
             foreach ($rows as $label => $val): ?>
             <tr><td class="lbl"><?= e($label) ?></td><td class="colon">:</td><td><?= e($val !== '' ? $val : '-') ?></td></tr>
