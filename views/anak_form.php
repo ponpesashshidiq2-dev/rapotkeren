@@ -109,7 +109,7 @@ function field($label, $name, $value, $type = 'text', $extra = '') {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x1="12" y1="3" y2="15"/></svg>
                         Pilih Pasfoto
                     </label>
-                    <input type="file" id="fotoInput" name="foto" accept="image/*" class="sr-only" onchange="previewAnakFoto(this)">
+                    <input type="file" id="fotoInput" name="foto" accept="image/*,.heic,.heif" class="sr-only" onchange="previewAnakFoto(this)">
                     <span class="file-name-hint" id="fotoFileName">Tidak ada berkas dipilih</span>
                 </div>
             </div>
@@ -254,13 +254,16 @@ function previewAnakFoto(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         document.getElementById('fotoFileName').textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        // HEIC tidak bisa dibaca FileReader biasa → konversi dulu lewat HeicUpload
+        HeicUpload.readAsDataURL(file).then(function (result) {
             const previewBox = document.querySelector('.logo-preview-box');
-            previewBox.innerHTML = '<img src="' + e.target.result + '" alt="Pasfoto" id="anakFotoPreview" style="object-fit: cover; width: 100%; height: 100%;">';
-        };
-        reader.readAsDataURL(file);
+            previewBox.innerHTML = '<img src="' + result + '" alt="Pasfoto" id="anakFotoPreview" style="object-fit: cover; width: 100%; height: 100%;">';
+        }).catch(function () {
+            document.getElementById('fotoFileName').textContent = file.name + ' (gagal dipratinjau)';
+        });
     }
 }
+// Auto-konversi HEIC → JPEG sebelum form disubmit
+HeicUpload.bindFormSubmit(document.querySelector('form[enctype="multipart/form-data"]'));
 </script>
 <?php page_footer(); ?>

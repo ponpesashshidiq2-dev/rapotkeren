@@ -105,7 +105,7 @@ page_header('Profil Lembaga', 'profil');
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x1="12" y1="3" y2="15"/></svg>
                         Pilih Berkas Logo
                     </label>
-                    <input type="file" id="logoInput" name="logo" accept="image/*" class="sr-only" onchange="previewLogo(this)">
+                    <input type="file" id="logoInput" name="logo" accept="image/*,.heic,.heif" class="sr-only" onchange="previewLogo(this)">
                     <span class="file-name-hint" id="logoFileName">Tidak ada berkas baru dipilih</span>
 
                     <?php if (!empty($profil['logo'])): ?>
@@ -175,7 +175,7 @@ page_header('Profil Lembaga', 'profil');
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x1="12" y1="3" y2="15"/></svg>
                         Pilih Gambar Background
                     </label>
-                    <input type="file" id="bgInput" name="background_rapot" accept="image/*" class="sr-only" onchange="previewBg(this)">
+                    <input type="file" id="bgInput" name="background_rapot" accept="image/*,.heic,.heif" class="sr-only" onchange="previewBg(this)">
                     <span class="file-name-hint" id="bgFileName">Tidak ada berkas baru dipilih</span>
 
                     <?php if (!empty($profil['background_rapot'])): ?>
@@ -324,12 +324,12 @@ function previewLogo(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         document.getElementById('logoFileName').textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        HeicUpload.readAsDataURL(file).then(function (result) {
             const previewBox = document.querySelectorAll('.logo-preview-box')[0];
-            previewBox.innerHTML = '<img src="' + e.target.result + '" alt="Preview Logo" id="logoPreviewImg">';
-        };
-        reader.readAsDataURL(file);
+            previewBox.innerHTML = '<img src="' + result + '" alt="Preview Logo" id="logoPreviewImg">';
+        }).catch(function () {
+            document.getElementById('logoFileName').textContent = file.name + ' (gagal dipratinjau)';
+        });
     }
 }
 
@@ -337,14 +337,16 @@ function previewBg(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         document.getElementById('bgFileName').textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        HeicUpload.readAsDataURL(file).then(function (result) {
             const previewBox = document.querySelectorAll('.logo-preview-box')[1];
-            previewBox.innerHTML = '<img src="' + e.target.result + '" alt="Preview Background" id="bgPreviewImg" style="object-fit:cover; width:100%; height:100%;">';
-        };
-        reader.readAsDataURL(file);
+            previewBox.innerHTML = '<img src="' + result + '" alt="Preview Background" id="bgPreviewImg" style="object-fit:cover; width:100%; height:100%;">';
+        }).catch(function () {
+            document.getElementById('bgFileName').textContent = file.name + ' (gagal dipratinjau)';
+        });
     }
 }
+// Auto-konversi HEIC → JPEG sebelum form disubmit
+HeicUpload.bindFormSubmit(document.querySelector('form[enctype="multipart/form-data"]'));
 </script>
 
 <?php page_footer(); ?>

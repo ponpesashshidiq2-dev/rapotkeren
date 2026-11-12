@@ -168,7 +168,7 @@ foreach ($st->fetchAll() as $r) $fotos[(int)$r['cp_id']][(int)$r['urutan']] = $r
                     <?php else: ?>
                         <div class="foto-empty">Foto <?= $i ?></div>
                     <?php endif; ?>
-                    <input type="file" name="foto_<?= (int)$cp['id'] ?>_<?= $i ?>" accept="image/*" <?= $canEdit ? '' : 'disabled' ?>>
+                    <input type="file" name="foto_<?= (int)$cp['id'] ?>_<?= $i ?>" accept="image/*,.heic,.heif" <?= $canEdit ? '' : 'disabled' ?>>
                     <label>Keterangan foto <?= $i ?></label>
                     <input type="text" name="foto_<?= (int)$cp['id'] ?>_<?= $i ?>_ket"
                            value="<?= e($f['keterangan'] ?? '') ?>" placeholder="mis. sedang bermain balok" <?= $canEdit ? '' : 'disabled' ?>>
@@ -204,24 +204,37 @@ function submitDel(cp, u) {
     document.getElementById('delFotoForm').submit();
 }
 
+// Auto-konversi HEIC bila form disubmit via Enter (jalur non-AJAX)
+HeicUpload.bindFormSubmit(document.querySelector('form[enctype="multipart/form-data"]'));
+
 // Simpan langsung selesai — tanpa loading, upload diproses di belakang
 var btnSimpanFoto = document.getElementById('btnSimpanFoto');
 if (btnSimpanFoto) btnSimpanFoto.addEventListener('click', function () {
     var form = this.closest('form');
     var status = document.getElementById('fotoStatus');
-    var fd = new FormData(form);
-    fd.append('format', 'json');
-    status.textContent = 'Tersimpan.';
-    status.style.color = '#187a46';
-    fetch(form.action || window.location.href, {
-        method: 'POST',
-        body: fd,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    }).then(function (r) { return r.json(); }).then(function () {
-        // Selesai di belakang — muat ulang ringan agar thumbnail tampil
-        window.location.reload();
-    }).catch(function () {
-        window.location.reload();
+    this.disabled = true;
+    status.textContent = 'Memproses…';
+    status.style.color = '#666';
+    var btn = this;
+    // HEIC dikonversi ke JPEG dulu di browser (server tidak bisa baca HEIC)
+    HeicUpload.convertHeicInForm(form).then(function () {
+        var fd = new FormData(form);
+        fd.append('format', 'json');
+        status.textContent = 'Tersimpan.';
+        status.style.color = '#187a46';
+        return fetch(form.action || window.location.href, {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (r) { return r.json(); }).then(function () {
+            window.location.reload();
+        }).catch(function () {
+            window.location.reload();
+        });
+    }).catch(function (err) {
+        btn.disabled = false;
+        status.textContent = (err && err.message) ? err.message : 'Gagal memproses file HEIC.';
+        status.style.color = '#b00020';
     });
 });
 </script>
