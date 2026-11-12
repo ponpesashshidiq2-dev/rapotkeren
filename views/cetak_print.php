@@ -153,9 +153,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
         <div class="official-title">PERKEMBANGAN ANAK DIDIK</div>
 	<div class="official-title">TAMAN KANAK KANAK 'AISYIYAH BUSTANUL ATHFAL</div>
         <div class="official-school">
-            <?= e(strtoupper(($profil['jenjang'] ? $profil['jenjang'] . ' ' : '') . ($profil['nama_sekolah'] ?: '..........................'))) ?>
-        </div>
-
+           
         <table class="identitas identitas-official">
             <?php
             $rows = [
@@ -175,6 +173,12 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 
         <div class="official-child-label">Nama Anak Didik :</div>
         <div class="official-child-name"><?= e($anak['nama_lengkap']) ?></div>
+	<br>
+	<br>
+	<br>
+ 	<div class="official-child-note">PIMPINAN PUSAT 'AISYIYAH :</div>
+	<div class="official-child-note">MAJELIS PENDIDIKAN ANAK USIA DINI, DASAR DAN MENENGAH :</div>
+
         <?php if (!empty($profil['cover_note'])): ?>
         <div class="official-child-note"><?= e($profil['cover_note']) ?></div>
         <?php endif; ?>
@@ -200,7 +204,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
                 'Jenis kelamin' => $anak['jenis_kelamin'] ?: '-',
                 'Agama' => $anak['agama'] ?: '-',
                 'Anak ke-' => $anak['anak_ke'] ?: '-',
-                'Jumlah saudara' => $anak['jumlah_saudara'] ?: '-',
                 'Kelompok / rombel' => $anak['kelompok'] ?: '-',
                 'Tanggal masuk' => !empty($profil['tanggal_masuk']) ? tanggalIndo($profil['tanggal_masuk']) : '-',
             ];
@@ -215,8 +218,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             $rows = [
                 'Nama ayah' => $anak['nama_ayah'] ?: '-',
                 'Pekerjaan ayah' => $anak['pekerjaan_ayah'] ?: '-',
-                'Nama ibu' => $anak['nama_ibu'] ?: '-',
-                'Pekerjaan ibu' => $anak['pekerjaan_ibu'] ?: '-',
                 'Nama wali (jika ada)' => $anak['nama_wali'] ?: '-',
             ];
             foreach ($rows as $label => $val): ?>
@@ -250,7 +251,9 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
             </div>
             <div class="sign-right">
                 <div class="sign-date"><?= e($profil['kota'] ?: $profil['kabupaten'] ?: ($profil['desa'] ?: '..........................')) ?>, <?= !empty($profil['tanggal_raport']) ? tanggalIndo($profil['tanggal_raport']) : '....................................' ?></div>
-                <div class="sign-label">Kepala Satuan PAUD / TK</div>
+                <div class="sign-label">
+    Kepala <?= e($profil['nama_sekolah']) ?>
+</div>
                 <div class="sign-space"></div>
                 <div class="sign-name"><strong>( <?= e($profil['kepala_sekolah'] ?: '................................................') ?> )</strong></div>
             </div>
