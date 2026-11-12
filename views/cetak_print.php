@@ -102,7 +102,7 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 <link rel="stylesheet" href="assets/print.css">
 <?php if (!empty($profil['background_rapot']) && file_exists(BASE_DIR . '/' . $profil['background_rapot'])): ?>
 <style>
-/* Background hanya untuk halaman isi — cover & biodata tetap bingkai bawaan */
+/* Background hanya untuk halaman isi — cover & biodata polos tanpa background/bingkai */
 .page:not(.page-cover-official):not(.page-biodata) {
     background-image: url('<?= e($profil['background_rapot']) ?>') !important;
     background-size: 100% 100% !important;
@@ -116,6 +116,19 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 }
 .page:not(.page-cover-official):not(.page-biodata) .page-inner::before,
 .page:not(.page-cover-official):not(.page-biodata) .page-inner::after {
+    display: none !important;
+}
+/* Cover & biodata: hilangkan bingkai dekoratif bawaan (garis gradien + border pink) */
+.page-cover-official .page-inner,
+.page-biodata .page-inner {
+    border: none !important;
+    background: #fff !important;
+    box-shadow: none !important;
+}
+.page-cover-official .page-inner::before,
+.page-cover-official .page-inner::after,
+.page-biodata .page-inner::before,
+.page-biodata .page-inner::after {
     display: none !important;
 }
 </style>
