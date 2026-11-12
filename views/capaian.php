@@ -61,6 +61,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if ($act === 'rename_sub') {
+        $id = (int)$_POST['id'];
+        $nama = trim($_POST['nama'] ?? '');
+        if ($id > 0 && $nama !== '') {
+            $db->prepare('UPDATE sub_cp SET nama = ? WHERE id = ?')->execute([$nama, $id]);
+            flash('Nama sub-bidang diubah.');
+        }
+    }
+
     redirect('index.php?route=capaian');
 }
 
@@ -100,7 +109,12 @@ $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
     <?php foreach ($subs as $sub): ?>
     <div class="sub-block">
         <div class="sub-head">
-            <strong><?= e($sub['nama']) ?></strong>
+            <form method="post" class="inline" style="flex:1; display:flex; gap:8px; align-items:center">
+                <input type="hidden" name="act" value="rename_sub">
+                <input type="hidden" name="id" value="<?= (int)$sub['id'] ?>">
+                <input name="nama" value="<?= e($sub['nama']) ?>" required style="flex:1; min-width:200px; font-weight:600">
+                <button class="btn btn-sm">Ubah</button>
+            </form>
             <form method="post" class="inline" onsubmit="return confirm('Hapus sub-bidang ini?')">
                 <input type="hidden" name="act" value="del_sub">
                 <input type="hidden" name="id" value="<?= (int)$sub['id'] ?>">
