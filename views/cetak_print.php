@@ -361,12 +361,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 <!-- ============ LEMBAR REFLEKSI ORANG TUA (terpisah) ============ -->
 <section class="page">
     <div class="page-inner">
-        <div class="meta-simple">
-            Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong>
-            &nbsp;&nbsp;|&nbsp;&nbsp; Kelompok: <?= e($anak['kelompok'] ?: '-') ?>
-            &nbsp;&nbsp;|&nbsp;&nbsp; Tahun Ajaran: <?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)
-        </div>
-
         <div class="refleksi-title">REFLEKSI ORANG TUA</div>
         <table class="refleksi-tbl">
             <thead>
@@ -395,12 +389,6 @@ $currentPageCount = ($bagian === 'cover_biodata') ? 2 : (($bagian === 'isi') ? $
 <!-- ============ LEMBAR PERTUMBUHAN, KEHADIRAN & PENGESAHAN ============ -->
 <section class="page page-pengesahan">
     <div class="page-inner">
-        <div class="meta-simple">
-            Nama Anak: <strong><?= e($anak['nama_lengkap']) ?></strong>
-            &nbsp;&nbsp;|&nbsp;&nbsp; Kelompok: <?= e($anak['kelompok'] ?: '-') ?>
-            &nbsp;&nbsp;|&nbsp;&nbsp; Tahun Ajaran: <?= e($profil['tahun_ajaran'] ?? '-') ?> (<?= e($profil['semester'] ?? '-') ?>)
-        </div>
-
         <div class="growth-title">PERTUMBUHAN DAN KEHADIRAN ANAK</div>
 
         <table class="growth-tbl growth-single">
