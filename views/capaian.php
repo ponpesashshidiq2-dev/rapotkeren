@@ -52,6 +52,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if ($act === 'rename_cp') {
+        $id = (int)$_POST['id'];
+        $nama = trim($_POST['nama'] ?? '');
+        if ($id > 0 && $nama !== '') {
+            $db->prepare('UPDATE cp SET nama = ? WHERE id = ?')->execute([$nama, $id]);
+            flash('Nama CP diubah.');
+        }
+    }
+
     redirect('index.php?route=capaian');
 }
 
@@ -70,6 +79,12 @@ $cps = $db->query('SELECT * FROM cp ORDER BY urutan, id')->fetchAll();
 <div class="panel">
     <div class="cp-head">
         <h2><?= e($cp['nama']) ?></h2>
+        <form method="post" class="inline cp-rename" style="margin-left:auto">
+            <input type="hidden" name="act" value="rename_cp">
+            <input type="hidden" name="id" value="<?= (int)$cp['id'] ?>">
+            <input name="nama" value="<?= e($cp['nama']) ?>" required style="min-width:280px">
+            <button class="btn btn-sm">Ubah</button>
+        </form>
     </div>
 
     <?php
