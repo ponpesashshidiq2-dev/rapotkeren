@@ -114,7 +114,7 @@ body {
 .identitas-official .lbl { width: 42mm; }
 .official-child-label {
     margin-top: 10mm; font-size: 13.5px; font-weight: 700; color: #0b3821;
-    text-align: left; width: 145mm;
+    text-align: center; width: 145mm;
 }
 .official-child-name {
     font-size: 20px; font-weight: 800; color: #0b3821;
