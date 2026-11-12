@@ -223,7 +223,7 @@ table.identitas .colon { width: 4mm; }
 }
 .ttd-row { display: flex; justify-content: space-around; margin-top: 10mm; text-align: center; }
 .ttd { width: 70mm; }
-.ttd-role { font-size: 13.5px; font-weight: 600; color: #1e293b; }
+.ttd-role { font-size: 13.5px; font-weight: 400; color: #1e293b; }
 .ttd-space { height: 20mm; }
 .ttd-center { text-align: center; margin-top: 12mm; font-size: 13.5px; line-height: 1.7; }
 .ttd-space-lg { height: 20mm; }
